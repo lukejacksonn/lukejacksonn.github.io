@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Homepage | Luke Jackson</title>
+
+  <style>
+
+    /* http://meyerweb.com/eric/tools/css/reset/
+       v2.0 | 20110126
+       License: none (public domain)
+    */
+
+    html, body, div, span, applet, object, iframe,
+    h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+    a, abbr, acronym, address, big, cite, code,
+    del, dfn, em, img, ins, kbd, q, s, samp,
+    small, strike, strong, sub, sup, tt, var,
+    b, u, i, center,
+    dl, dt, dd, ol, ul, li,
+    fieldset, form, label, legend,
+    table, caption, tbody, tfoot, thead, tr, th, td,
+    article, aside, canvas, details, embed,
+    figure, figcaption, footer, header, hgroup,
+    menu, nav, output, ruby, section, summary,
+    time, mark, audio, video {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      font-size: 100%;
+      font: inherit;
+      vertical-align: baseline;
+    }
+    /* HTML5 display-role reset for older browsers */
+    article, aside, details, figcaption, figure,
+    footer, header, hgroup, menu, nav, section {
+      display: block;
+    }
+    html {
+      width: 100%;
+      min-width: 320px;
+      height: 100%;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+    body {
+      line-height: 1;
+      font-family: sans-serif;
+    }
+    ol, ul {
+      list-style: none;
+    }
+    blockquote, q {
+      quotes: none;
+    }
+    blockquote:before, blockquote:after,
+    q:before, q:after {
+      content: '';
+      content: none;
+    }
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+    }
+
+    /* Homepage Styles */
+
+    nav {}
+    nav a {
+      display: inline-block;
+      padding: 1rem;
+    }
+    header {
+      width: 100%;
+      padding: 2rem 1rem;
+    }
+    header article {
+      max-width: 480px;
+      margin: auto;
+    }
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    section {
+      height: 150px;
+    }
+    section div {
+      float: left;
+      width: 50%;
+      height: 100%;
+      text-align: center;
+    }
+    .codepen {
+      background: #1a1c1d;
+      a { color: #fff; }
+    }
+    .github {
+      background: #f5f5f5;
+      a { color: #000; }
+    }
+    blockquote {
+      text-align: center;
+      padding: 3rem;
+    }
+    img {}
+    footer {
+      max-width: 1080px;
+      margin: auto;
+      text-align: center;
+      padding: 3rem 0;
+    }
+
+  </style>
+
+</head>
+<body>
+  <!-- Site Navigation -->
+  <nav>
+    <a href="#">Portfolio</a>
+    <a href="#">Biography</a>
+  </nav>
+  <!-- Masthead -->
+  <header>
+    <article>
+      <h1>Luke Jackson</h1>
+      <h3>developer / designer</h3>
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aperiam reiciendis laboriosam.</p>
+    </article>
+  </header>
+  <main>
+    <!-- Personal Accounts -->
+    <section>
+      <div class='codepen'>
+        <a href="http://codepen.io/lukejacksonn">
+          <img src="assets/images/codepen.png" alt="" />
+          <h3>CodePen</h3>
+        </a>
+      </div>
+      <div class='github'>
+        <a href="http://github.com/lukejacksonn">
+          <img src="/assets/images/github.png" alt="" />
+          <h3>GitHub</h3>
+        </a>
+      </div>
+    </section>
+    <!-- Personal Quote -->
+    <blockquote>
+      <i>&#8220;</i>
+      <h1>It's all for naught if you don't have freedom</h1>
+      <span>Braveheart 1990</span>
+    </blockquote>
+    <!-- Personal Image -->
+    <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/45808/me-2.png" style="margin: 0 auto;" />
+  </main>
+  <!-- Site Footer -->
+  <footer>
+    <a href="mailto:lukejacksonn@gmail.com">lukejacksonn@gmail.com</a>
+    <p>thanks for visiting, come back again</p>
+  </footer>
+</body>
+</html>
