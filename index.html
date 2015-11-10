@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Homepage | Luke Jackson</title>
+  <title>Luke Jackson</title>
+  <meta name="description" content="A web developer, designer and farmers son living in Newcastle, UK. I specialise in frontend web but am comfortable using the adobe suite and full stack javascript. Lately I have been playing around with es6, flexbox and backbone/marionette.">
+  <meta name="author" content="Luke Jackson">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
 
@@ -68,67 +71,445 @@
 
     /* Homepage Styles */
 
-    nav {}
+    nav {
+      background: #f2f2f2;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+          -ms-flex-pack: justify;
+              justify-content: space-between;
+    }
+    nav > div {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+    }
+    nav > .social > a:nth-child(1) {
+      background: #00aced;
+    }
+    nav > .social > a:nth-child(2) {
+      background: #3b5998;
+    }
+    nav > .social > a:nth-child(3) {
+      background: #125688;
+    }
     nav a {
       display: inline-block;
-      padding: 1rem;
+      padding: calc(0.25rem + 1vw + 1vh);;
+      background: #b6b6b6;
+      color: #fff;
+      font-weight: bold;
+      min-width: 3rem;
+      text-align: center;
+    }
+    nav a:nth-child(1) {
+      background: #cb2027;
+    }
+    nav a:nth-child(2) {
+      background: #c6c6c6;
     }
     header {
       width: 100%;
-      padding: 2rem 1rem;
+      min-height: 100vmin;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+          -ms-flex-direction: column;
+              flex-direction: column;
     }
-    header article {
-      max-width: 480px;
+    header > article {
+      max-width: 1080px;
+      padding: 2rem;
       margin: auto;
+    }
+    header > article > * + * {
+      margin-top: 1rem;
+    }
+    header > article > h1 {
+      font-size: calc(2.2rem + 2vw + 2vh);
+      font-weight: bold;
+    }
+    header > article > h3 {
+      font-weight: bold;
+    }
+    header > article > p {
+      max-width: 40ex;
+      line-height: 150%;
+    }
+    header > article > p > span {
+      font-style: italic;
     }
     main {
       max-width: 1080px;
       margin: 0 auto;
     }
     section {
-      height: 150px;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      min-height: 50vmin;
     }
-    section div {
+    section > div {
       float: left;
       width: 50%;
-      height: 100%;
       text-align: center;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+    }
+    section > div > a {
+      margin: auto;
+    }
+    section > div > a > img {
+      width: calc(1rem + 5vw + 5vh);
+      margin-bottom: 1rem;
     }
     .codepen {
       background: #1a1c1d;
-      a { color: #fff; }
     }
+    .codepen a { color: #fff; }
     .github {
       background: #f5f5f5;
-      a { color: #000; }
     }
+    .github a { color: #000; }
     blockquote {
       text-align: center;
       padding: 3rem;
+      min-height: 50vmin;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+          -ms-flex-direction: column;
+              flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+          -ms-flex-align: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+          -ms-flex-pack: center;
+              justify-content: center;
     }
-    img {}
+    blockquote > * + * {
+      margin-top: 1rem;
+    }
+    blockquote i {
+      font-size: 64px;
+      line-height: 16px;
+      color: #b6b6b6;
+      background: transparent;
+    }
+    blockquote h1 {
+      font-family: serif;
+      font-size: 3vmax;
+      text-align: center;
+      color: #b6b6b6;
+      background: transparent;
+      font-weight: normal;
+    }
+    blockquote p {
+      background: transparent;
+      color: #d8d8d8;
+      font-size: 0.8rem;
+      margin-top: 1.62rem;
+    }
+    img {
+      display: block;
+      width: 100%;
+    }
+
+    aside {
+      max-width: 1080px;
+      margin: auto;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+          -ms-flex-direction: column;
+              flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+          -ms-flex-align: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+          -ms-flex-pack: center;
+              justify-content: center;
+    }
+
+    aside > article {
+      min-height: 62vmin;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+          -ms-flex-direction: column;
+              flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+          -ms-flex-align: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+          -ms-flex-pack: center;
+              justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    aside > article > h1 {
+      font-size: calc(1rem + 2vw + 2vh);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    aside > article > p {
+      text-align: center;
+      max-width: 70ex;
+      margin-top: 2rem;
+      line-height: 162%;
+      font-size: 0.8rem;
+    }
+
+    aside > article > button {
+      margin: 0;
+      margin-top: 2rem;
+      padding: 1rem;
+      border: 1px solid #b6b6b6;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+    }
+
+    aside > ul {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-flex-flow: row wrap;
+          -ms-flex-flow: row wrap;
+              flex-flow: row wrap;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+          -ms-flex-pack: center;
+              justify-content: center;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+          -ms-flex-align: center;
+              align-items: center;
+      padding: 2rem;
+      border-top: 1px solid #c8c8c8;
+      border-bottom: 1px solid #c8c8c8;
+    }
+
+    aside > ul > li {
+      -webkit-box-flex: 200px;
+      -webkit-flex: 200px;
+          -ms-flex: 200px;
+              flex: 200px;
+    }
+
+    aside > ul > li > img {
+      padding: 1rem;
+    }
+
     footer {
       max-width: 1080px;
       margin: auto;
       text-align: center;
       padding: 3rem 0;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+          -ms-flex-direction: column;
+              flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+          -ms-flex-align: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+          -ms-flex-pack: center;
+              justify-content: center;
+      min-height: 40vmin;
+    }
+    footer > * + * {
+      margin-top: 1rem;
+    }
+    footer a {
+      color: rgba(0,0,0,0.87);
+      background: transparent;
+      font-weight: bold;
+    }
+    footer p {
+      background: transparent;
+    }
+
+    figure {
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background: rgba(255,255,255,1);
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-flex-flow: row wrap;
+          -ms-flex-flow: row wrap;
+              flex-flow: row wrap;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+          -ms-flex-pack: center;
+              justify-content: center;
+      -webkit-box-align: start;
+      -webkit-align-items: flex-start;
+          -ms-flex-align: start;
+              align-items: flex-start;
+      padding: 2rem 1rem;
+      overflow-y: scroll;
+    }
+
+    figure > h1 {
+      font-size: calc(2rem + 5vw + 5vh);
+      min-height: 60vmin;
+      width: 100%;
+      -webkit-box-flex: 0;
+      -webkit-flex: none;
+          -ms-flex: none;
+              flex: none;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+          -ms-flex-align: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+          -ms-flex-pack: center;
+              justify-content: center;
+      font-weight: bold;
+      color: #e0e0e0;
+    }
+
+    figure > article {
+      -webkit-box-flex: 1;
+      -webkit-flex: auto;
+          -ms-flex: auto;
+              flex: auto;
+      margin: 1rem;
+      max-width: 540px;
+      box-shadow: 0 0 20px #eaeaea;
+    }
+
+    figure > article.small {
+      max-width: 360px;
+    }
+
+    figure > article.large {
+      max-width: 720px;
+    }
+
+    figure > article + article {
+      margin-top: 2rem;
+    }
+
+    figure > article > div {
+      background: #fff;
+      padding: 2rem;
+    }
+    figure > article > div > h1 {
+      font-size: 1.62rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    figure > article > div > p {
+      line-height: 150%;
+      color: #b6b6b6;
+      font-size: 1rem;
+      overflow: hidden;
+      -webkit-transition: font-size .4s, line-height .4s;
+      transition: font-size .4s, line-height .4s;
+    }
+
+    @media (min-width: 1200px) {
+      figure > article > div > p {
+        font-size: 0.5rem;
+      }
+    }
+
+    figure > article > div:hover > p {
+      font-size: 1rem;
+    }
+    figure > article > div > div {
+      width: 100%;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+    }
+
+    figure > article > div > div > button {
+      width: 50%;
+      margin: 0;
+      margin-top: 2rem;
+      padding: 1rem;
+      border: 1px solid #b6b6b6;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .no-scroll {
+      overflow: hidden;
     }
 
   </style>
 
 </head>
 <body>
-  <!-- Site Navigation -->
-  <nav>
-    <a href="#">Portfolio</a>
-    <a href="#">Biography</a>
-  </nav>
-  <!-- Masthead -->
   <header>
+    <!-- Site Navigation -->
+    <nav>
+      <a href="#" onclick="showGallery()">Portfolio</a>
+      <div class="social">
+        <a href="http://twitter.com/lukejacksonn"><img src="assets/images/twitter.png" alt="twitter"></a>
+        <a href="http://facebook.com/lukejacksonn"><img src="assets/images/facebook.png" alt="facebook"></a>
+        <a href="http://instagram.com/lukejacksonn"><img src="assets/images/instagram.png" alt="instagram"></a>
+      </div>
+    </nav>
+    <!-- Masthead -->
     <article>
       <h1>Luke Jackson</h1>
       <h3>developer / designer</h3>
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aperiam reiciendis laboriosam.</p>
+      <p>An ideas person with a <span>can do attitude</span>. Helping ideate around, architect and build new things.</p>
     </article>
   </header>
   <main>
@@ -142,7 +523,7 @@
       </div>
       <div class='github'>
         <a href="http://github.com/lukejacksonn">
-          <img src="/assets/images/github.png" alt="" />
+          <img src="assets/images/github.png" alt="" />
           <h3>GitHub</h3>
         </a>
       </div>
@@ -150,16 +531,158 @@
     <!-- Personal Quote -->
     <blockquote>
       <i>&#8220;</i>
-      <h1>It's all for naught if you don't have freedom</h1>
-      <span>Braveheart 1990</span>
+      <h1>It's all for nothing if you don't have freedom</h1>
+      <p>William Wallace, Braveheart (1995)</p>
     </blockquote>
     <!-- Personal Image -->
     <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/45808/me-2.png" style="margin: 0 auto;" />
   </main>
+  <aside>
+    <article>
+      <h1>Portfolio</h1>
+      <p>Most of my best works are hosted on github or codepen. Here are a collection of works, not necessarily my best output but projects I enjoyed doing, learned something in the process of doing or that have sentimental value.</p>
+      <button onclick="showGallery()">VIEWING GALLERY</button>
+    </article>
+    <ul>
+      <li><img src="assets/images/personal/forklift.png"/></li>
+      <li><img src="assets/images/personal/bike.jpg"/></li>
+      <li><img src="assets/images/personal/logs.png"/></li>
+      <li><img src="assets/images/personal/dene.png"/></li>
+    </ul>
+  </aside>
   <!-- Site Footer -->
   <footer>
     <a href="mailto:lukejacksonn@gmail.com">lukejacksonn@gmail.com</a>
-    <p>thanks for visiting, come back again</p>
+    <p>thanks for visiting, come back soon</p>
   </footer>
+  <figure class="hidden" onclick="closeGallery(this)">
+    <h1>2015</h1>
+    <article>
+      <img src="assets/images/portfolio/greedy.png" alt="">
+      <div>
+        <p>Responsive menus got to me so hard one night that I made a nav bar that stacks item elements up into a hidden dropdown when they overflow. It turned out that Chris Coyier (the other side of the world) was having the same brainwave at the same time. I commented on his demo and he featured my implementation in one of his articles. This was and is still the highlight of my year! Although I'm still not 100% sold on my own idea, it's visually appealing but practically, somewhat flawed.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/malette.png" alt="">
+      <div>
+        <p>Google Material design was announced in February. I was almost instantly inspired. At same the time angular was all the rage in the MVC world. A couple of weeks hacking around and Malette was formed. A palette creation tool using the colours outlined in the material design specification. Together with a colleague we put together a GO backend so that users could save their palettes as well as download them. That version is yet to be released but it was a fun learning exercise all the same.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/drawers.png" alt="">
+      <div>
+        <p>The situation arose whilst working on a mobile single page application, when we wanted to mimic the native sliding drawer component. This demo shows a two drawer setup with bindings for gestures, buttons and arrow key presses.</p>
+      </div>
+    </article>
+    <article class="small">
+      <img src="assets/images/portfolio/actuate.png" alt="">
+      <div>
+        <p>I try use CSS animations in my work but I am still very much in the learning stage. A great bootstrap resource out there on github is animate.css (a set of community crafted animations). What frustrated me was how hard it was to initiate and sequence animations on elements. So I wrote a small utility library to help with such tasks. Initially it was a jQuery plugin but I have recently rewritten it in vanilla javascript and implemented an ES6 generators function that makes animation sequences a breeze.</p>
+      </div>
+    </article>
+    <article class="large">
+      <img src="assets/images/portfolio/peekypassword.png" alt="">
+      <div>
+        <p>A client came to us and said that mobile users are getting their passwords wrong upon registration and having to reset them when it comes to logging in. This obviously a less than optimal user experience. I read around the problem and engineered an input field with an all CSS animated eye attached, which when clicked hides and shows the users input.</p>
+      </div>
+    </article>
+    <article class="large">
+      <img src="assets/images/portfolio/joetodd.png" alt="">
+      <div>
+        <p>One of my best of friends was looking to find a job in tech. I was honored with the task of laying out his CV for him. An A* student wasn't going to be hard to sell so we went a little bit crazy with the layout as to fend off really boring companies. He now works for a nifty little startup just near kings cross.</p>
+      </div>
+    </article>
+    <article class="small">
+      <img src="assets/images/portfolio/pinkpig.png" alt="">
+      <div>
+        <p>My mum asked me to make her a poster for the Sunday carvery at our farm restaurant. It is not often than I do work for my mother but I enjoyed this one. Got it printed on A1 and framed. This was one of the last bits of print I did before starting my new job as a front end developer.</p>
+      </div>
+    </article>
+    <h1>2014</h1>
+    <article>
+      <img src="assets/images/portfolio/littlefish.png" alt="">
+      <div>
+        <p>When spritekit, apples 2D SDK was first mentioned I was curious. Having already tried and succeed (after some infuriating certificate signatures) in writing and publishing a game for iOS, in hacky Objective-C, I wanted to know how much more accessible they had made it to developers. LittleFish was built shortly after that thought. The game mechanic was a shameless rip off of one of my remembered childhood favorite flash games.. Fishy.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/unilever.png" alt="">
+      <div>
+        <p>My final year piece for my masters was tightly coupled with a Unilever initiative, orienting around the theme of working with, not against the planet. Unfortunately most of the content that I created is still under strict confidentiality agreements. This concept never got used but it was a web page that took advantage of WebGL and canvas to animate a swarm of fireflies posing as fairy lights.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/cs50.png" alt="">
+      <div>
+        <p>After my undergraduate degree I was wrongly pessimistic about the computer science community. I had been bored into submission by the education system and needed some inspiration. I had found CS50.tv the online introduction to computer science lead by the incredible David Malan. I messaged David out of desperation, asking if I could come learn how to really teach computer science. To my amazement, he replied to my message and we conversed quite a bit. In the end I ended up making him some flyers for the CS50 fair and hackathon. Nothing came of it in the end yet it remains a dream of mine to go over and help out for a semester.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/catie-cv.png" alt="">
+      <div>
+        <p>I was quite into print at this point in my life. After my master I was working at a print shop whilst looking for a job in tech. I was flexing my recently acquired InDesign skills and decided to help my girlfriend out with her CV. She was applying for marketing jobs so we had quite a lot of creative license. We got it printed on nice think 180gsm paper, it looked and felt awesome. Needless to say she got many job offers.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/lowsimonside.jpg" alt="">
+      <div>
+        <p>A project we undertook as a cohort, to try revitalize a community center near Newcastle. This was the first slide of a proposal we made for them outlining all our ideas and strategies.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/atom.png" alt="">
+      <div>
+        <p>During my period of study at the Northern Design Center we were tasked with various sporadic ideation and innovation tasks. One that really interested me was an exercise for Atom Bank, soon to be the first exclusively online bank in the world. They wanted us to tell us how they envisioned the brand. This was my chosen output.</p>
+      </div>
+    </article>
+    <h1>2013</h1>
+    <article>
+      <img src="assets/images/portfolio/picase.jpg" alt="">
+      <div>
+        <p>Always one for ideas and not always digital or print. I had just purchased one of the first Raspberry Pis and wanted a cool case in which to house it. Me and a friend designed a fold up one and got it prototyped. This is what it looked like.</p>
+      </div>
+    </article>
+    <article>
+      <img src="assets/images/portfolio/wartimez.png" alt="">
+      <div>
+        <p>One of my old classmates had built a web page that indicated the current in game time of the online world War Z which cycles from day to night at a rate considerably faster than real time. It was getting a hell of a lot of traffic at the time and needed a face lift.</p>
+      </div>
+    </article>
+    <article class="small">
+      <img src="assets/images/portfolio/uberdrive.png" alt="">
+      <div>
+        <p>For christmas this year I was gifted a 16GB SanDisk cruzer fit (the impossibly small USB drives). The optimist in me knew that one day these things would hold petabytes. Imagine they were infinite I thought.. that is when I surgically attached one to an amazon S3 and wrote an API to keep things synced and a UI to list the contents of both the online and offline files. This was built upon one of the earliest releases or node-webkit (now jw.js) and was my first experience of manipulating the file system of the OS with javascript. I was hooked.</p>
+      </div>
+    </article>
+    <article class="small">
+      <img src="assets/images/portfolio/wordyy.png" alt="">
+      <div>
+        <p>A web app that I made out of convenience. Me and my friends at the time were playing a lot of articulate (the try make people guess a word without saying the word game). We were using a dictionary, egg timer and notepad. One day a light bulb must have lit up in my head and thought.. let's app _all_ the things.</p>
+      </div>
+    </article>
+    <h1>2012</h1>
+    <article>
+      <img src="assets/images/portfolio/droptu.png" alt="">
+      <div>
+        <p>This was the first end to end web app I ever made. It was for my final year project doing computer science at Newcastle University. Most of the web stuff I knew then was self taught as the mostly taught us Java on our course. The backend was written in php and the frontend was meticulously crafted and sprited. A lot of consideration went into the UI/UX and implemented full screen drag and drop uploads wayy before Dropbox. I actually applied to Y-Combinator with this idea, unfortunately they already had a file storage startup under their belts. Over the years (and web standards progressed), I have watched Dropbox slowly morph into what I yearned to be my first big break. Oh how young, ambitious and naive I was.</p>
+      </div>
+    </article>
+    <h1>2011</h1>
+  </figure>
+
+  <script>
+    var elem = document.getElementsByTagName('figure')[0];
+    var body = document.getElementsByTagName('body')[0];
+
+    function showGallery() {
+      elem.classList.remove("hidden");
+      body.classList.add("no-scroll");
+    }
+    function closeGallery(elem) {
+      elem.classList.add("hidden");
+      body.classList.remove("no-scroll");
+    }
+  </script>
 </body>
 </html>

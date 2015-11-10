@@ -1,0 +1,496 @@
+/* http://meyerweb.com/eric/tools/css/reset/
+ v2.0 | 20110126
+ License: none (public domain)
+*/
+
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
+}
+
+html {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+body {
+  line-height: 1;
+  font-family: sans-serif;
+}
+
+ol,
+ul {
+  list-style: none;
+}
+
+blockquote,
+q {
+  quotes: none;
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+  content: '';
+  content: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+/* Homepage Styles */
+
+nav {
+  background: #f2f2f2;
+  display: flex;
+  justify-content: space-between;
+}
+
+nav > div {
+  display: flex;
+}
+
+nav > .social > a:nth-child(1) {
+  background: #00aced;
+}
+
+nav > .social > a:nth-child(2) {
+  background: #3b5998;
+}
+
+nav > .social > a:nth-child(3) {
+  background: #125688;
+}
+
+nav a {
+  display: inline-block;
+  padding: calc(0.25rem + 1vw + 1vh);
+  ;
+  background: #b6b6b6;
+  color: #fff;
+  font-weight: bold;
+  min-width: 3rem;
+  text-align: center;
+}
+
+nav a:nth-child(1) {
+  background: #cb2027;
+}
+
+nav a:nth-child(2) {
+  background: #c6c6c6;
+}
+
+header {
+  width: 100%;
+  min-height: 100vmin;
+  display: flex;
+  flex-direction: column;
+}
+
+header > article {
+  max-width: 1080px;
+  padding: 2rem;
+  margin: auto;
+}
+
+header > article > * + * {
+  margin-top: 1rem;
+}
+
+header > article > h1 {
+  font-size: calc(2.2rem + 2vw + 2vh);
+  font-weight: bold;
+}
+
+header > article > h3 {
+  font-weight: bold;
+}
+
+header > article > p {
+  max-width: 40ex;
+  line-height: 150%;
+}
+
+header > article > p > span {
+  font-style: italic;
+}
+
+main {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+section {
+  display: flex;
+  min-height: 50vmin;
+}
+
+section > div {
+  float: left;
+  width: 50%;
+  text-align: center;
+  display: flex;
+}
+
+section > div > a {
+  margin: auto;
+}
+
+section > div > a > img {
+  width: calc(1rem + 5vw + 5vh);
+  margin-bottom: 1rem;
+}
+
+.codepen {
+  background: #1a1c1d;
+}
+
+.codepen a {
+  color: #fff;
+}
+
+.github {
+  background: #f5f5f5;
+}
+
+.github a {
+  color: #000;
+}
+
+blockquote {
+  text-align: center;
+  padding: 3rem;
+  min-height: 50vmin;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+blockquote > * + * {
+  margin-top: 1rem;
+}
+
+blockquote i {
+  font-size: 64px;
+  line-height: 16px;
+  color: #b6b6b6;
+  background: transparent;
+}
+
+blockquote h1 {
+  font-family: serif;
+  font-size: 3vmax;
+  text-align: center;
+  color: #b6b6b6;
+  background: transparent;
+  font-weight: normal;
+}
+
+blockquote p {
+  background: transparent;
+  color: #d8d8d8;
+  font-size: 0.8rem;
+  margin-top: 1.62rem;
+}
+
+img {
+  display: block;
+  width: 100%;
+}
+
+aside {
+  max-width: 1080px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+aside > article {
+  min-height: 62vmin;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+}
+
+aside > article > h1 {
+  font-size: calc(1rem + 2vw + 2vh);
+  font-weight: bold;
+  text-align: center;
+}
+
+aside > article > p {
+  text-align: center;
+  max-width: 70ex;
+  margin-top: 2rem;
+  line-height: 162%;
+  font-size: 0.8rem;
+}
+
+aside > article > button {
+  margin: 0;
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #b6b6b6;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+
+aside > ul {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  border-top: 1px solid #c8c8c8;
+  border-bottom: 1px solid #c8c8c8;
+}
+
+aside > ul > li {
+  flex: 200px;
+}
+
+aside > ul > li > img {
+  padding: 1rem;
+}
+
+footer {
+  max-width: 1080px;
+  margin: auto;
+  text-align: center;
+  padding: 3rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vmin;
+}
+
+footer > * + * {
+  margin-top: 1rem;
+}
+
+footer a {
+  color: rgba(0, 0, 0, 0.87);
+  background: transparent;
+  font-weight: bold;
+}
+
+footer p {
+  background: transparent;
+}
+
+figure {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(255, 255, 255, 1);
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1rem;
+  overflow-y: scroll;
+}
+
+figure > h1 {
+  font-size: calc(2rem + 5vw + 5vh);
+  min-height: 60vmin;
+  width: 100%;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #e0e0e0;
+}
+
+figure > article {
+  flex: auto;
+  margin: 1rem;
+  max-width: 540px;
+  box-shadow: 0 0 20px #eaeaea;
+}
+
+figure > article.small {
+  max-width: 360px;
+}
+
+figure > article.large {
+  max-width: 720px;
+}
+
+figure > article + article {
+  margin-top: 2rem;
+}
+
+figure > article > div {
+  background: #fff;
+  padding: 2rem;
+}
+
+figure > article > div > h1 {
+  font-size: 1.62rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+figure > article > div > p {
+  line-height: 150%;
+  color: #b6b6b6;
+  font-size: 1rem;
+  overflow: hidden;
+  transition: font-size .4s, line-height .4s;
+}
+
+@media (min-width: 1200px) {
+  figure > article > div > p {
+      font-size: 0.5rem;
+  }
+}
+
+figure > article > div:hover > p {
+  font-size: 1rem;
+}
+
+figure > article > div > div {
+  width: 100%;
+  display: flex;
+}
+
+figure > article > div > div > button {
+  width: 50%;
+  margin: 0;
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #b6b6b6;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+.no-scroll {
+  overflow: hidden;
+}
