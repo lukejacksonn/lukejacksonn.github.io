@@ -174,8 +174,7 @@ nav > .social > a:nth-child(3) {
 
 nav a {
   display: inline-block;
-  padding: calc(0.25rem + 1vw + 1vh);
-  ;
+  padding: 1rem;
   background: #b6b6b6;
   color: #fff;
   font-weight: bold;
@@ -397,10 +396,9 @@ footer p {
 }
 
 figure {
-  position: fixed;
+  position: absolute;
   top: 0;
   right: 0;
-  bottom: 0;
   left: 0;
   background: rgba(255, 255, 255, 1);
   display: flex;
@@ -408,8 +406,6 @@ figure {
   justify-content: center;
   align-items: flex-start;
   padding: 2rem 1rem;
-  overflow-y: scroll; /* has to be scroll, not auto */
-  -webkit-overflow-scrolling: touch;
 }
 
 figure > h1 {
@@ -490,8 +486,4 @@ figure > article > div > div > button {
 
 .hidden {
   display: none;
-}
-
-.no-scroll {
-  overflow: hidden;
 }
