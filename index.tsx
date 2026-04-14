@@ -1,4 +1,4 @@
-import type { TouchEventHandler } from "react";
+import { useCallback, useRef, useState, type TouchEventHandler } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AssetRecordType,
@@ -284,83 +284,110 @@ function getShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
 }
 
 function App() {
+  const [screen, setScreen] = useState<Screen>("home");
+  const editorRef = useRef<Editor | null>(null);
+  const screenRef = useRef<Screen>("home");
+
+  const setCurrentScreen = useCallback((nextScreen: Screen, animate = true, clear = true) => {
+    const editor = editorRef.current;
+
+    screenRef.current = nextScreen;
+    setScreen(nextScreen);
+
+    if (!editor) return;
+
+    if (nextScreen === "home") {
+      layoutHomeImages(editor, animate, clear);
+    } else {
+      layoutResumeImages(editor, animate, clear);
+    }
+  }, []);
+
   const handleTouchCapture: TouchEventHandler<HTMLDivElement> = (event) => {
     if (getSeededShapeIdFromElement(event.target)) {
       event.stopPropagation();
     }
   };
 
-  const handleMount = (editor: Editor) => {
-    let currentScreen: Screen = "home";
+  const handleMount = useCallback(
+    (editor: Editor) => {
+      editorRef.current = editor;
 
-    const layoutCurrentScreen = (animate = false, clear = false) => {
-      if (currentScreen === "home") {
-        layoutHomeImages(editor, animate, clear);
-      } else {
-        layoutResumeImages(editor, animate, clear);
-      }
-    };
-
-    layoutCurrentScreen(true, true);
-
-    const handleResize = () => layoutCurrentScreen();
-    let pointerDown:
-      | {
-          point: Vec;
-          pointerId: number;
-          shapeId: TLShapeId;
+      const layoutCurrentScreen = (animate = false, clear = false) => {
+        if (screenRef.current === "home") {
+          layoutHomeImages(editor, animate, clear);
+        } else {
+          layoutResumeImages(editor, animate, clear);
         }
-      | undefined;
+      };
 
-    const handleEvent = (info: TLEventInfo) => {
-      if (info.type !== "pointer") return;
-      if (info.button !== 0) return;
+      layoutCurrentScreen(true, true);
 
-      const targetShapeId = getShapeIdAtPointer(editor, info);
+      const handleResize = () => layoutCurrentScreen();
+      let pointerDown:
+        | {
+            point: Vec;
+            pointerId: number;
+            shapeId: TLShapeId;
+          }
+        | undefined;
 
-      if (!targetShapeId) {
+      const handleEvent = (info: TLEventInfo) => {
+        if (info.type !== "pointer") return;
+        if (info.button !== 0) return;
+
+        const targetShapeId = getShapeIdAtPointer(editor, info);
+
+        if (!targetShapeId) {
+          pointerDown = undefined;
+          return;
+        }
+
+        if (info.name === "pointer_down") {
+          pointerDown = {
+            point: Vec.From(info.point),
+            pointerId: info.pointerId,
+            shapeId: targetShapeId,
+          };
+          return;
+        }
+
+        if (info.name !== "pointer_up") return;
+        if (!pointerDown) return;
+        if (pointerDown.pointerId !== info.pointerId || pointerDown.shapeId !== targetShapeId)
+          return;
+
+        const distance = Vec.Dist(pointerDown.point, Vec.From(info.point));
         pointerDown = undefined;
-        return;
-      }
 
-      if (info.name === "pointer_down") {
-        pointerDown = {
-          point: Vec.From(info.point),
-          pointerId: info.pointerId,
-          shapeId: targetShapeId,
-        };
-        return;
-      }
+        if (distance > 8) return;
 
-      if (info.name !== "pointer_up") return;
-      if (!pointerDown) return;
-      if (pointerDown.pointerId !== info.pointerId || pointerDown.shapeId !== targetShapeId) return;
+        if (screenRef.current === "home" && isHomeResumeShapeId(targetShapeId)) {
+          setCurrentScreen("resume");
+          return;
+        }
 
-      const distance = Vec.Dist(pointerDown.point, Vec.From(info.point));
-      pointerDown = undefined;
+        if (screenRef.current === "resume" && isResumeShapeId(targetShapeId)) {
+          zoomToResumeImage(editor, targetShapeId);
+        }
+      };
 
-      if (distance > 8) return;
+      editor.on("resize", handleResize);
+      editor.on("event", handleEvent);
 
-      if (currentScreen === "home" && isHomeResumeShapeId(targetShapeId)) {
-        currentScreen = "resume";
-        layoutCurrentScreen(true, true);
-        return;
-      }
+      editor.setCurrentTool("select");
 
-      if (currentScreen === "resume" && isResumeShapeId(targetShapeId)) {
-        zoomToResumeImage(editor, targetShapeId);
-      }
-    };
+      return () => {
+        editor.off("resize", handleResize);
+        editor.off("event", handleEvent);
+        editorRef.current = null;
+      };
+    },
+    [setCurrentScreen],
+  );
 
-    editor.on("resize", handleResize);
-    editor.on("event", handleEvent);
-
-    editor.setCurrentTool("select");
-
-    return () => {
-      editor.off("resize", handleResize);
-      editor.off("event", handleEvent);
-    };
+  const handleBack = () => {
+    setCurrentScreen("home");
   };
 
   return (
@@ -370,6 +397,42 @@ function App() {
       onTouchStartCapture={handleTouchCapture}
     >
       <Tldraw hideUi onMount={handleMount} />
+      {screen !== "home" && (
+        <button
+          type="button"
+          aria-label="Back to home"
+          onClick={handleBack}
+          style={{
+            position: "absolute",
+            top: 24,
+            left: 24,
+            zIndex: 1,
+            display: "grid",
+            placeItems: "center",
+            width: 72,
+            height: 72,
+            padding: 0,
+            border: "1px solid rgba(0, 0, 0, 0.14)",
+            borderRadius: 8,
+            background: "#ffffff",
+            color: "#111111",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
+            cursor: "pointer",
+            touchAction: "manipulation",
+          }}
+        >
+          <svg aria-hidden="true" width="42" height="42" viewBox="0 0 24 24">
+            <path
+              d="M15 5 8 12l7 7"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.5"
+            />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
