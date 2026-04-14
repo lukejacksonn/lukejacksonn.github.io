@@ -1,5 +1,15 @@
+import type { TouchEventHandler } from "react";
 import { createRoot } from "react-dom/client";
-import { AssetRecordType, createShapeId, type Editor, type TLImageAsset, Tldraw } from "tldraw";
+import {
+  AssetRecordType,
+  Vec,
+  createShapeId,
+  type Editor,
+  type TLEventInfo,
+  type TLImageAsset,
+  type TLShapeId,
+  Tldraw,
+} from "tldraw";
 import "tldraw/tldraw.css";
 
 const resumeImages = [
@@ -23,6 +33,22 @@ function getAssetId(id: (typeof resumeImages)[number]["id"]) {
 
 function getShapeId(id: (typeof resumeImages)[number]["id"]) {
   return createShapeId(`resume-${id}`);
+}
+
+function isResumeShapeId(shapeId: TLShapeId) {
+  return resumeImages.some((image) => getShapeId(image.id) === shapeId);
+}
+
+function getResumeShapeIdFromElement(target: EventTarget | null) {
+  if (!(target instanceof Element)) return;
+
+  const shapeElement = target.closest("[data-shape-id]");
+  const shapeId = shapeElement?.getAttribute("data-shape-id") as TLShapeId | null;
+
+  if (!shapeId) return;
+  if (!isResumeShapeId(shapeId)) return;
+
+  return shapeId;
 }
 
 function getResumeLayout(viewport: { w: number; h: number }) {
@@ -75,7 +101,41 @@ function layoutResumeImages(editor: Editor, animate = false) {
   });
 }
 
+function zoomToResumeImage(editor: Editor, shapeId: TLShapeId) {
+  const bounds = editor.getShapePageBounds(shapeId);
+  if (!bounds) return;
+
+  editor.zoomToBounds(bounds, {
+    animation: { duration: 450 },
+    inset: 96,
+  });
+}
+
+function getResumeShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
+  if (info.type !== "pointer") return;
+
+  const shape =
+    info.target === "shape"
+      ? info.shape
+      : editor.getShapeAtPoint(editor.inputs.getCurrentPagePoint(), {
+          hitInside: true,
+          margin: editor.options.hitTestMargin / editor.getZoomLevel(),
+          renderingOnly: true,
+        });
+
+  if (!shape) return;
+  if (!isResumeShapeId(shape.id)) return;
+
+  return shape.id;
+}
+
 function App() {
+  const handleTouchCapture: TouchEventHandler<HTMLDivElement> = (event) => {
+    if (getResumeShapeIdFromElement(event.target)) {
+      event.stopPropagation();
+    }
+  };
+
   const handleMount = (editor: Editor) => {
     const assets: TLImageAsset[] = resumeImages.map((image) => ({
       id: getAssetId(image.id),
@@ -87,7 +147,8 @@ function App() {
         h: page.h,
         name: `${image.id}.png`,
         isAnimated: false,
-        mimeType: "image/png",
+        // These are rectangular pages, so we can skip tldraw's transparent PNG alpha hit-testing.
+        mimeType: null,
         src: `${import.meta.env.BASE_URL}images/resume/${image.id}.png`,
       },
     }));
@@ -99,17 +160,63 @@ function App() {
     layoutResumeImages(editor, true);
 
     const handleResize = () => layoutResumeImages(editor);
+    let pointerDown:
+      | {
+          point: Vec;
+          pointerId: number;
+          shapeId: TLShapeId;
+        }
+      | undefined;
+
+    const handleEvent = (info: TLEventInfo) => {
+      if (info.type !== "pointer") return;
+      if (info.button !== 0) return;
+
+      const shapeId = getResumeShapeIdAtPointer(editor, info);
+
+      if (!shapeId) {
+        pointerDown = undefined;
+        return;
+      }
+
+      if (info.name === "pointer_down") {
+        pointerDown = {
+          point: Vec.From(info.point),
+          pointerId: info.pointerId,
+          shapeId,
+        };
+        return;
+      }
+
+      if (info.name !== "pointer_up") return;
+      if (!pointerDown) return;
+      if (pointerDown.pointerId !== info.pointerId || pointerDown.shapeId !== shapeId) return;
+
+      const distance = Vec.Dist(pointerDown.point, Vec.From(info.point));
+      pointerDown = undefined;
+
+      if (distance > 8) return;
+
+      zoomToResumeImage(editor, shapeId);
+    };
+
     editor.on("resize", handleResize);
+    editor.on("event", handleEvent);
 
     editor.setCurrentTool("select");
 
     return () => {
       editor.off("resize", handleResize);
+      editor.off("event", handleEvent);
     };
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0 }}>
+    <div
+      style={{ position: "fixed", inset: 0 }}
+      onTouchEndCapture={handleTouchCapture}
+      onTouchStartCapture={handleTouchCapture}
+    >
       <Tldraw hideUi onMount={handleMount} />
     </div>
   );
