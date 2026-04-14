@@ -1,2 +1,8 @@
 # Homepage
-My personal homepage to be hosted at http://lukejacksonn.com
+
+A Vite+ React app built around a full-screen tldraw canvas.
+
+```sh
+vp install
+vp dev
+```
