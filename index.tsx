@@ -239,6 +239,38 @@ function getBoundsAround(bounds: Bounds[]): Bounds {
   };
 }
 
+function shuffled<T>(items: readonly T[]) {
+  const shuffledItems = [...items];
+
+  for (let index = shuffledItems.length - 1; index > 0; index--) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const item = shuffledItems[index]!;
+
+    shuffledItems[index] = shuffledItems[swapIndex]!;
+    shuffledItems[swapIndex] = item;
+  }
+
+  return shuffledItems;
+}
+
+function getBoundsCenter(bounds: Bounds) {
+  return {
+    x: bounds.x + bounds.w / 2,
+    y: bounds.y + bounds.h / 2,
+  };
+}
+
+function getCompassRotation(editor: Editor) {
+  const layout = getCanvasLayout(editor.getViewportScreenBounds());
+  const viewport = editor.getViewportPageBounds();
+  const homeCenter = getBoundsCenter(layout.homeBounds);
+  const viewportCenter = getBoundsCenter(viewport);
+  const angle = Math.atan2(homeCenter.y - viewportCenter.y, homeCenter.x - viewportCenter.x);
+
+  // The icon points up by default, while atan2's zero angle points right.
+  return Math.round((angle * 180) / Math.PI + 90);
+}
+
 function getCanvasLayout(viewport: { w: number; h: number }) {
   const isLandscape = viewport.w >= viewport.h;
   const homeLayout = getHomeLayout(viewport);
@@ -494,6 +526,17 @@ function App() {
   const isTransitioningRef = useRef(false);
   const focusRequestIdRef = useRef(0);
   const [isHomeFocused, setIsHomeFocused] = useState(true);
+  const [compassRotation, setCompassRotation] = useState(0);
+
+  const updateCompassRotation = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    setCompassRotation((currentRotation) => {
+      const nextRotation = getCompassRotation(editor);
+      return currentRotation === nextRotation ? currentRotation : nextRotation;
+    });
+  }, []);
 
   const clearTransitionTimeouts = useCallback(() => {
     transitionTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
@@ -536,6 +579,7 @@ function App() {
     if (!editor) return;
 
     layoutCanvas(editor, animate, false, focus, includeHome, visiblePages);
+    updateCompassRotation();
 
     if (focus.type === "home" && !isReturningHomeFromSection) return;
     if (focus.type !== "home" && !includeHome) return;
@@ -562,7 +606,7 @@ function App() {
       },
       animate ? cameraAnimationMs : 0,
     );
-  }, [clearPendingHomeHide, clearTransitionTimeouts]);
+  }, [clearPendingHomeHide, clearTransitionTimeouts, updateCompassRotation]);
 
   const startGridTransition = useCallback(() => {
     const editor = editorRef.current;
@@ -577,8 +621,8 @@ function App() {
     focusRef.current = { type: "grid" };
     pendingVisiblePagesRef.current = undefined;
 
-    const homeShapeIds = getHomeShapeIds();
-    const pageShapeIds = getPageShapeIds("all");
+    const homeShapeIds = shuffled(getHomeShapeIds());
+    const pageShapeIds = shuffled(getPageShapeIds("all"));
     const zoomDelay = homeShapeIds.length * homeStaggerMs + transitionPauseMs;
     const revealDelay = zoomDelay + cameraAnimationMs + transitionPauseMs;
 
@@ -636,8 +680,9 @@ function App() {
       transitionTimeoutsRef.current = [];
       isTransitioningRef.current = false;
       setIsHomeFocused(false);
+      updateCompassRotation();
     }, revealDelay + pageShapeIds.length * gridStaggerMs + transitionPauseMs);
-  }, [clearPendingHomeHide, clearTransitionTimeouts, scheduleTransitionStep]);
+  }, [clearPendingHomeHide, clearTransitionTimeouts, scheduleTransitionStep, updateCompassRotation]);
 
   const startHomeTransition = useCallback(() => {
     const editor = editorRef.current;
@@ -645,7 +690,7 @@ function App() {
 
     const previousFocus = focusRef.current;
     const previousVisiblePages = getVisiblePages(previousFocus);
-    const pageShapeIds = getPageShapeIds(previousVisiblePages);
+    const pageShapeIds = shuffled(getPageShapeIds(previousVisiblePages));
 
     clearPendingHomeHide();
     clearTransitionTimeouts();
@@ -659,7 +704,7 @@ function App() {
 
     const zoomDelay = pageShapeIds.length * gridStaggerMs + transitionPauseMs;
     const revealDelay = zoomDelay + cameraAnimationMs + transitionPauseMs;
-    const homeShapeIds = getHomeShapeIds();
+    const homeShapeIds = shuffled(getHomeShapeIds());
 
     pageShapeIds.forEach((shapeId, index) => {
       scheduleTransitionStep(() => {
@@ -724,8 +769,9 @@ function App() {
       transitionTimeoutsRef.current = [];
       isTransitioningRef.current = false;
       pendingVisiblePagesRef.current = undefined;
+      updateCompassRotation();
     }, revealDelay + homeShapeIds.length * homeStaggerMs + transitionPauseMs);
-  }, [clearPendingHomeHide, clearTransitionTimeouts, scheduleTransitionStep]);
+  }, [clearPendingHomeHide, clearTransitionTimeouts, scheduleTransitionStep, updateCompassRotation]);
 
   const handleHomeClick = () => {
     if (focusRef.current.type === "grid") {
@@ -747,6 +793,7 @@ function App() {
       editorRef.current = editor;
       focusRef.current = { type: "home" };
       setIsHomeFocused(true);
+      updateCompassRotation();
 
       layoutCanvas(editor, true, true, focusRef.current);
 
@@ -761,7 +808,9 @@ function App() {
           focusRef.current.type === "home" || hideHomeTimeoutRef.current !== undefined,
           pendingVisiblePagesRef.current ?? getVisiblePages(focusRef.current),
         );
+        updateCompassRotation();
       };
+      const handleFrame = () => updateCompassRotation();
       let pointerDown:
         | {
           point: Vec;
@@ -826,6 +875,7 @@ function App() {
 
       editor.on("resize", handleResize);
       editor.on("event", handleEvent);
+      editor.on("frame", handleFrame);
 
       editor.setCurrentTool("select");
 
@@ -834,10 +884,11 @@ function App() {
         clearTransitionTimeouts();
         editor.off("resize", handleResize);
         editor.off("event", handleEvent);
+        editor.off("frame", handleFrame);
         editorRef.current = null;
       };
     },
-    [clearPendingHomeHide, clearTransitionTimeouts, focusCanvas, startGridTransition],
+    [clearPendingHomeHide, clearTransitionTimeouts, focusCanvas, startGridTransition, updateCompassRotation],
   );
 
   return (
@@ -859,19 +910,36 @@ function App() {
             zIndex: 1,
             display: "grid",
             placeItems: "center",
-            height: 48,
-            padding: "0 18px",
-            border: "1px solid rgba(0, 0, 0, 0.14)",
-            borderRadius: 8,
+            width: 80,
+            height: 80,
+            padding: 0,
+            border: "none",
+            borderRadius: "50%",
             background: "#ffffff",
-            color: "#111111",
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.18)",
+            color: "#999999",
+            boxShadow: "3px 3px 0px 2px #d8d8d8",
             cursor: "pointer",
-            font: "600 16px/1 system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
             touchAction: "manipulation",
           }}
         >
-          Home
+          <svg
+            aria-hidden="true"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            style={{
+              transform: `rotate(${compassRotation}deg)`,
+              transition: "transform 120ms linear",
+            }}
+          >
+            <path
+              d="M12 3 18 21 12 17 6 21 12 3Z"
+              fill="currentColor"
+              stroke="currentColor"
+              strokeLinejoin="round"
+              strokeWidth="1.5"
+            />
+          </svg>
         </button>
       )}
     </div>
