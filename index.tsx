@@ -14,7 +14,7 @@ import "tldraw/tldraw.css";
 
 const resumeImages = [
   { id: "cover", label: "Cover" },
-  { id: "readme", label: "Readme" },
+  { id: "about", label: "About" },
   { id: "work", label: "Work" },
   { id: "toolbox", label: "Toolbox" },
   { id: "extra", label: "Extra" },
@@ -275,10 +275,10 @@ function getShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
     info.target === "shape"
       ? info.shape
       : editor.getShapeAtPoint(editor.inputs.getCurrentPagePoint(), {
-          hitInside: true,
-          margin: editor.options.hitTestMargin / editor.getZoomLevel(),
-          renderingOnly: true,
-        });
+        hitInside: true,
+        margin: editor.options.hitTestMargin / editor.getZoomLevel(),
+        renderingOnly: true,
+      });
 
   return shape?.id;
 }
@@ -326,10 +326,10 @@ function App() {
       const handleResize = () => layoutCurrentScreen();
       let pointerDown:
         | {
-            point: Vec;
-            pointerId: number;
-            shapeId: TLShapeId;
-          }
+          point: Vec;
+          pointerId: number;
+          shapeId: TLShapeId;
+        }
         | undefined;
 
       const handleEvent = (info: TLEventInfo) => {
