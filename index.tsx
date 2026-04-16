@@ -65,7 +65,11 @@ const homeImages = [
 
 type PageGroupId = (typeof pageGroups)[number]["id"];
 type Bounds = { x: number; y: number; w: number; h: number };
-type CanvasFocus = { type: "home" } | { type: "grid" } | { type: "shape"; shapeId: TLShapeId };
+type CanvasFocus =
+  | { type: "home" }
+  | { type: "grid" }
+  | { type: "shape"; groupId: PageGroupId; shapeId: TLShapeId };
+type VisiblePages = "all" | "none" | PageGroupId;
 
 const cameraAnimationMs = 600;
 
@@ -106,6 +110,14 @@ function isPageShapeId(shapeId: TLShapeId) {
   return pageGroups.some((group) =>
     group.images.some((image) => getPageShapeId(group.id, image.id) === shapeId),
   );
+}
+
+function getPageShapeGroupId(shapeId: TLShapeId) {
+  const group = pageGroups.find((pageGroup) =>
+    pageGroup.images.some((image) => getPageShapeId(pageGroup.id, image.id) === shapeId),
+  );
+
+  return group?.id;
 }
 
 function isHomeShapeId(shapeId: TLShapeId) {
@@ -267,9 +279,13 @@ function getCanvasLayout(viewport: { w: number; h: number }) {
   };
 }
 
-function getPageShapes(layout: ReturnType<typeof getCanvasLayout>) {
-  return pageGroups.flatMap((group, groupIndex) =>
-    group.images.map((image, imageIndex) => {
+function getPageShapes(layout: ReturnType<typeof getCanvasLayout>, visiblePages: VisiblePages = "all") {
+  if (visiblePages === "none") return [];
+
+  return pageGroups.flatMap((group, groupIndex) => {
+    if (visiblePages !== "all" && group.id !== visiblePages) return [];
+
+    return group.images.map((image, imageIndex) => {
       const column = layout.isLandscape ? imageIndex : groupIndex;
       const row = layout.isLandscape ? groupIndex : imageIndex;
 
@@ -285,16 +301,34 @@ function getPageShapes(layout: ReturnType<typeof getCanvasLayout>) {
           altText: `${group.label} ${image.label} page`,
         },
       };
-    }),
-  );
+    });
+  });
+}
+
+function getPageShapeIds(visiblePages: VisiblePages = "all") {
+  if (visiblePages === "none") return [];
+
+  return pageGroups.flatMap((group) => {
+    if (visiblePages !== "all" && group.id !== visiblePages) return [];
+
+    return group.images.map((image) => getPageShapeId(group.id, image.id));
+  });
+}
+
+function getVisiblePages(focus: CanvasFocus): VisiblePages {
+  if (focus.type === "home") return "none";
+  if (focus.type === "grid") return "all";
+
+  return focus.groupId;
 }
 
 function getCanvasShapes(
   viewport: { w: number; h: number },
   layout: ReturnType<typeof getCanvasLayout>,
   includeHome = true,
+  visiblePages: VisiblePages = "all",
 ) {
-  const pageShapes = getPageShapes(layout);
+  const pageShapes = getPageShapes(layout, visiblePages);
 
   if (!includeHome) return pageShapes;
 
@@ -318,6 +352,19 @@ function deleteHomeShapes(editor: Editor) {
   if (homeShapeIds.length === 0) return;
 
   editor.deleteShapes(homeShapeIds);
+}
+
+function deleteHiddenPageShapes(editor: Editor, visiblePages: VisiblePages) {
+  if (visiblePages === "all") return;
+
+  const visibleShapeIds = new Set(getPageShapeIds(visiblePages));
+  const hiddenShapeIds = getPageShapeIds().filter(
+    (shapeId) => !visibleShapeIds.has(shapeId) && editor.getShape(shapeId),
+  );
+
+  if (hiddenShapeIds.length === 0) return;
+
+  editor.deleteShapes(hiddenShapeIds);
 }
 
 function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanvasShapes>) {
@@ -393,10 +440,11 @@ function layoutCanvas(
   clear = false,
   focus: CanvasFocus = { type: "grid" },
   includeHome = focus.type === "home",
+  visiblePages = getVisiblePages(focus),
 ) {
   const viewport = editor.getViewportScreenBounds();
   const layout = getCanvasLayout(viewport);
-  const shapes = getCanvasShapes(viewport, layout, includeHome);
+  const shapes = getCanvasShapes(viewport, layout, includeHome, visiblePages);
 
   editor.run(() => {
     if (clear) clearCanvas(editor);
@@ -407,6 +455,7 @@ function layoutCanvas(
       deleteHomeShapes(editor);
     }
     createOrUpdateShapes(editor, shapes);
+    deleteHiddenPageShapes(editor, visiblePages);
   });
 
   focusCamera(editor, layout, focus, animate);
@@ -431,6 +480,7 @@ function App() {
   const editorRef = useRef<Editor | null>(null);
   const focusRef = useRef<CanvasFocus>({ type: "home" });
   const hideHomeTimeoutRef = useRef<number | undefined>(undefined);
+  const pendingVisiblePagesRef = useRef<VisiblePages | undefined>(undefined);
   const focusRequestIdRef = useRef(0);
   const [isHomeFocused, setIsHomeFocused] = useState(true);
 
@@ -439,12 +489,19 @@ function App() {
 
     window.clearTimeout(hideHomeTimeoutRef.current);
     hideHomeTimeoutRef.current = undefined;
+    pendingVisiblePagesRef.current = undefined;
   }, []);
 
   const focusCanvas = useCallback((focus: CanvasFocus, animate = true) => {
-    const wasHomeFocused = focusRef.current.type === "home";
+    const previousFocus = focusRef.current;
+    const wasHomeFocused = previousFocus.type === "home";
+    const isReturningHomeFromSection =
+      focus.type === "home" && previousFocus.type === "shape" && animate;
     const requestId = focusRequestIdRef.current + 1;
     const includeHome = focus.type === "home" || (wasHomeFocused && animate);
+    const visiblePages = isReturningHomeFromSection
+      ? previousFocus.groupId
+      : getVisiblePages(focus);
 
     focusRequestIdRef.current = requestId;
     const editor = editorRef.current;
@@ -455,13 +512,17 @@ function App() {
 
     if (!editor) return;
 
-    layoutCanvas(editor, animate, false, focus, includeHome);
+    layoutCanvas(editor, animate, false, focus, includeHome, visiblePages);
 
-    if (focus.type === "home" || !includeHome) return;
+    if (focus.type === "home" && !isReturningHomeFromSection) return;
+    if (focus.type !== "home" && !includeHome) return;
+
+    pendingVisiblePagesRef.current = visiblePages;
 
     hideHomeTimeoutRef.current = window.setTimeout(
       () => {
         hideHomeTimeoutRef.current = undefined;
+        pendingVisiblePagesRef.current = undefined;
 
         if (focusRequestIdRef.current !== requestId) return;
 
@@ -469,7 +530,11 @@ function App() {
         if (!currentEditor) return;
 
         currentEditor.run(() => {
-          deleteHomeShapes(currentEditor);
+          if (focus.type === "home") {
+            deleteHiddenPageShapes(currentEditor, "none");
+          } else {
+            deleteHomeShapes(currentEditor);
+          }
         });
       },
       animate ? cameraAnimationMs : 0,
@@ -494,7 +559,15 @@ function App() {
 
       layoutCanvas(editor, true, true, focusRef.current);
 
-      const handleResize = () => layoutCanvas(editor, false, false, focusRef.current);
+      const handleResize = () =>
+        layoutCanvas(
+          editor,
+          false,
+          false,
+          focusRef.current,
+          focusRef.current.type === "home" || hideHomeTimeoutRef.current !== undefined,
+          pendingVisiblePagesRef.current ?? getVisiblePages(focusRef.current),
+        );
       let pointerDown:
         | {
           point: Vec;
@@ -538,7 +611,7 @@ function App() {
         if (targetGroupId) {
           const shapeId = getFirstPageShapeId(targetGroupId);
           if (shapeId) {
-            focusCanvas({ type: "shape", shapeId });
+            focusCanvas({ type: "shape", groupId: targetGroupId, shapeId });
           }
           return;
         }
@@ -549,7 +622,10 @@ function App() {
         }
 
         if (isPageShapeId(targetShapeId)) {
-          focusCanvas({ type: "shape", shapeId: targetShapeId });
+          const groupId = getPageShapeGroupId(targetShapeId);
+          if (groupId) {
+            focusCanvas({ type: "shape", groupId, shapeId: targetShapeId });
+          }
         }
       };
 
