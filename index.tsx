@@ -58,9 +58,9 @@ const pageGroups = [
 const homeImages = [
   { id: "intro", label: "Intro", file: "Intro.png", w: 595, h: 595 },
   { id: "resume", label: "Resume", file: "Resume.png", w: 287, h: 287 },
-  { id: "photos", label: "Photos", file: "Photos.png", w: 287, h: 287 },
-  { id: "inspiration", label: "Inspiration", file: "Inspiration.png", w: 287, h: 287 },
   { id: "portfolio", label: "Portfolio", file: "Portfolio.png", w: 287, h: 287 },
+  { id: "inspiration", label: "Inspiration", file: "Inspiration.png", w: 287, h: 287 },
+  { id: "photos", label: "Photos", file: "Photos.png", w: 287, h: 287 },
 ] as const;
 
 type PageGroupId = (typeof pageGroups)[number]["id"];
@@ -180,7 +180,7 @@ function getHomeLayout(viewport: { w: number; h: number }) {
     positions: {
       intro: { x: 0, y: 0 },
       resume: { x: isLandscape ? firstTile : 0, y: isLandscape ? 0 : firstTile },
-      photos: {
+      portfolio: {
         x: isLandscape ? secondTile : home.tile + home.gap,
         y: isLandscape ? 0 : firstTile,
       },
@@ -188,7 +188,7 @@ function getHomeLayout(viewport: { w: number; h: number }) {
         x: isLandscape ? firstTile : 0,
         y: isLandscape ? home.tile + home.gap : secondTile,
       },
-      portfolio: {
+      photos: {
         x: isLandscape ? secondTile : home.tile + home.gap,
         y: isLandscape ? home.tile + home.gap : secondTile,
       },
@@ -890,7 +890,7 @@ function App() {
       editor.on("event", handleEvent);
       editor.on("frame", handleFrame);
 
-      editor.setCurrentTool("select");
+      editor.setCurrentTool("hand");
 
       return () => {
         clearPendingHomeHide();
@@ -927,7 +927,7 @@ function App() {
             width: 80,
             height: 80,
             padding: 0,
-            border: "4px solid #d8d8d8",
+            border: "1px solid #d8d8d8",
             borderRadius: "50%",
             background: "#ffffff",
             color: "#d8d8d8",
