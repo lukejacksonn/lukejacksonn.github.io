@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type TouchEventHandler } from "react";
+import { useCallback, useRef, type TouchEventHandler } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AssetRecordType,
@@ -13,12 +13,46 @@ import {
 import "tldraw/tldraw.css";
 
 const resumeImages = [
-  { id: "cover", label: "Cover" },
-  { id: "about", label: "About" },
-  { id: "work", label: "Work" },
-  { id: "toolbox", label: "Toolbox" },
-  { id: "extra", label: "Extra" },
-  { id: "contact", label: "Contact" },
+  { id: "Cover", label: "Cover", file: "Cover.png" },
+  { id: "About", label: "About", file: "About.png" },
+  { id: "Work", label: "Work", file: "Work.png" },
+  { id: "Toolbox", label: "Toolbox", file: "Toolbox.png" },
+  { id: "Extra", label: "Extra", file: "Extra.png" },
+  { id: "Contact", label: "Contact", file: "Contact.png" },
+] as const;
+
+const portfolioImages = [
+  { id: "Chatea", label: "Chatea", file: "Chatea.png" },
+  { id: "TinyShop", label: "TinyShop", file: "TinyShop.png" },
+  { id: "Paddock", label: "Paddock", file: "Paddock.png" },
+  { id: "EnergyRank", label: "Energy Rank", file: "EnergyRank.png" },
+  { id: "Nitros", label: "Nitros", file: "Nitros.png" },
+  { id: "Huddlum", label: "Huddlum", file: "Huddlum.png" },
+] as const;
+
+const inspirationImages = [
+  { id: "People", label: "People", file: "People.png" },
+  { id: "Films", label: "Films", file: "Films.png" },
+  { id: "Things", label: "Things", file: "Things.png" },
+  { id: "Places", label: "Places", file: "Places.png" },
+  { id: "Music", label: "Music", file: "Music.png" },
+  { id: "Books", label: "Books", file: "Books.png" },
+] as const;
+
+const photoImages = [
+  { id: "2026", label: "2026", file: "2026.png" },
+  { id: "2025", label: "2025", file: "2025.png" },
+  { id: "2024", label: "2024", file: "2024.png" },
+  { id: "2023", label: "2023", file: "2023.png" },
+  { id: "2022", label: "2022", file: "2022.png" },
+  { id: "2021", label: "2021", file: "2021.png" },
+] as const;
+
+const pageGroups = [
+  { id: "resume", label: "Resume", folder: "resume", images: resumeImages },
+  { id: "portfolio", label: "Portfolio", folder: "portfolio", images: portfolioImages },
+  { id: "inspiration", label: "Inspiration", folder: "inspiration", images: inspirationImages },
+  { id: "photos", label: "Photos", folder: "photos", images: photoImages },
 ] as const;
 
 const homeImages = [
@@ -29,7 +63,8 @@ const homeImages = [
   { id: "portfolio", label: "Portfolio", file: "Portfolio.png", w: 287, h: 287 },
 ] as const;
 
-type Screen = "home" | "resume";
+type PageGroupId = (typeof pageGroups)[number]["id"];
+type Bounds = { x: number; y: number; w: number; h: number };
 
 const page = {
   w: 1190,
@@ -44,12 +79,12 @@ const home = {
   gap: 21,
 };
 
-function getResumeAssetId(id: (typeof resumeImages)[number]["id"]) {
-  return AssetRecordType.createId(`resume-${id}`);
+function getPageAssetId(groupId: string, imageId: string) {
+  return AssetRecordType.createId(`page-${groupId}-${imageId}`);
 }
 
-function getResumeShapeId(id: (typeof resumeImages)[number]["id"]) {
-  return createShapeId(`resume-${id}`);
+function getPageShapeId(groupId: string, imageId: string) {
+  return createShapeId(`page-${groupId}-${imageId}`);
 }
 
 function getHomeAssetId(id: (typeof homeImages)[number]["id"]) {
@@ -60,12 +95,14 @@ function getHomeShapeId(id: (typeof homeImages)[number]["id"]) {
   return createShapeId(`home-${id}`);
 }
 
-function isResumeShapeId(shapeId: TLShapeId) {
-  return resumeImages.some((image) => getResumeShapeId(image.id) === shapeId);
+function isPageGroupId(id: string): id is PageGroupId {
+  return pageGroups.some((group) => group.id === id);
 }
 
-function isHomeResumeShapeId(shapeId: TLShapeId) {
-  return shapeId === getHomeShapeId("resume");
+function isPageShapeId(shapeId: TLShapeId) {
+  return pageGroups.some((group) =>
+    group.images.some((image) => getPageShapeId(group.id, image.id) === shapeId),
+  );
 }
 
 function isHomeShapeId(shapeId: TLShapeId) {
@@ -73,7 +110,16 @@ function isHomeShapeId(shapeId: TLShapeId) {
 }
 
 function isSeededShapeId(shapeId: TLShapeId) {
-  return isResumeShapeId(shapeId) || isHomeShapeId(shapeId);
+  return isPageShapeId(shapeId) || isHomeShapeId(shapeId);
+}
+
+function getHomeTargetGroupId(shapeId: TLShapeId) {
+  const homeImage = homeImages.find((image) => getHomeShapeId(image.id) === shapeId);
+
+  if (!homeImage) return;
+  if (!isPageGroupId(homeImage.id)) return;
+
+  return homeImage.id;
 }
 
 function getSeededShapeIdFromElement(target: EventTarget | null) {
@@ -86,41 +132,6 @@ function getSeededShapeIdFromElement(target: EventTarget | null) {
   if (!isSeededShapeId(shapeId)) return;
 
   return shapeId;
-}
-
-function getResumeLayout(viewport: { w: number; h: number }) {
-  const columns = viewport.w >= viewport.h ? 3 : 2;
-  const rows = Math.ceil(resumeImages.length / columns);
-
-  return {
-    columns,
-    bounds: {
-      x: 0,
-      y: 0,
-      w: columns * page.w + (columns - 1) * page.gap,
-      h: rows * page.h + (rows - 1) * page.gap,
-    },
-  };
-}
-
-function getResumeShapes(columns: number) {
-  return resumeImages.map((image, index) => {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-
-    return {
-      id: getResumeShapeId(image.id),
-      type: "image" as const,
-      x: column * (page.w + page.gap),
-      y: row * (page.h + page.gap),
-      props: {
-        assetId: getResumeAssetId(image.id),
-        w: page.w,
-        h: page.h,
-        altText: `Resume ${image.label.toLowerCase()} page`,
-      },
-    };
-  });
 }
 
 function getHomeLayout(viewport: { w: number; h: number }) {
@@ -154,14 +165,14 @@ function getHomeLayout(viewport: { w: number; h: number }) {
   };
 }
 
-function getHomeShapes(viewport: { w: number; h: number }) {
+function getHomeShapes(viewport: { w: number; h: number }, origin = { x: 0, y: 0 }) {
   const layout = getHomeLayout(viewport);
 
   return homeImages.map((image) => ({
     id: getHomeShapeId(image.id),
     type: "image" as const,
-    x: layout.positions[image.id].x,
-    y: layout.positions[image.id].y,
+    x: origin.x + layout.positions[image.id].x,
+    y: origin.y + layout.positions[image.id].y,
     props: {
       assetId: getHomeAssetId(image.id),
       w: image.w,
@@ -169,6 +180,104 @@ function getHomeShapes(viewport: { w: number; h: number }) {
       altText: image.label,
     },
   }));
+}
+
+function getGridSize(isLandscape: boolean) {
+  const columns = isLandscape ? 6 : pageGroups.length;
+  const rows = isLandscape ? pageGroups.length : 6;
+
+  return {
+    columns,
+    rows,
+    w: columns * page.w + (columns - 1) * page.gap,
+    h: rows * page.h + (rows - 1) * page.gap,
+  };
+}
+
+function getBoundsAround(bounds: Bounds[]): Bounds {
+  const minX = Math.min(...bounds.map((bound) => bound.x));
+  const minY = Math.min(...bounds.map((bound) => bound.y));
+  const maxX = Math.max(...bounds.map((bound) => bound.x + bound.w));
+  const maxY = Math.max(...bounds.map((bound) => bound.y + bound.h));
+
+  return {
+    x: minX,
+    y: minY,
+    w: maxX - minX,
+    h: maxY - minY,
+  };
+}
+
+function getCanvasLayout(viewport: { w: number; h: number }) {
+  const isLandscape = viewport.w >= viewport.h;
+  const homeLayout = getHomeLayout(viewport);
+  const gridSize = getGridSize(isLandscape);
+  const layoutGap = page.gap * 2;
+  const homeOrigin = isLandscape
+    ? { x: 0, y: (gridSize.h - homeLayout.bounds.h) / 2 }
+    : { x: (gridSize.w - homeLayout.bounds.w) / 2, y: 0 };
+  const grid: Bounds = isLandscape
+    ? { x: homeLayout.bounds.w + layoutGap, y: 0, w: gridSize.w, h: gridSize.h }
+    : { x: 0, y: homeLayout.bounds.h + layoutGap, w: gridSize.w, h: gridSize.h };
+  const homeBounds = {
+    x: homeOrigin.x,
+    y: homeOrigin.y,
+    w: homeLayout.bounds.w,
+    h: homeLayout.bounds.h,
+  };
+  const groupBounds = Object.fromEntries(
+    pageGroups.map((group, groupIndex) => {
+      const bounds = isLandscape
+        ? {
+          x: grid.x,
+          y: grid.y + groupIndex * (page.h + page.gap),
+          w: grid.w,
+          h: page.h,
+        }
+        : {
+          x: grid.x + groupIndex * (page.w + page.gap),
+          y: grid.y,
+          w: page.w,
+          h: grid.h,
+        };
+
+      return [group.id, bounds];
+    }),
+  ) as Record<PageGroupId, Bounds>;
+
+  return {
+    isLandscape,
+    bounds: getBoundsAround([homeBounds, grid]),
+    grid,
+    homeOrigin,
+    groupBounds,
+  };
+}
+
+function getPageShapes(layout: ReturnType<typeof getCanvasLayout>) {
+  return pageGroups.flatMap((group, groupIndex) =>
+    group.images.map((image, imageIndex) => {
+      const column = layout.isLandscape ? imageIndex : groupIndex;
+      const row = layout.isLandscape ? groupIndex : imageIndex;
+
+      return {
+        id: getPageShapeId(group.id, image.id),
+        type: "image" as const,
+        x: layout.grid.x + column * (page.w + page.gap),
+        y: layout.grid.y + row * (page.h + page.gap),
+        props: {
+          assetId: getPageAssetId(group.id, image.id),
+          w: page.w,
+          h: page.h,
+          altText: `${group.label} ${image.label} page`,
+        },
+      };
+    }),
+  );
+}
+
+function getCanvasShapes(viewport: { w: number; h: number }, layout: ReturnType<typeof getCanvasLayout>) {
+  return [...getHomeShapes(viewport, layout.homeOrigin), ...getPageShapes(layout)];
 }
 
 function clearCanvas(editor: Editor) {
@@ -180,38 +289,36 @@ function createImageAssets(editor: Editor, assets: TLImageAsset[]) {
   editor.createAssets(assets.filter((asset) => !editor.getAsset(asset.id)));
 }
 
-function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getResumeShapes>) {
+function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanvasShapes>) {
   editor.createShapes(shapes.filter((shape) => !editor.getShape(shape.id)));
   editor.updateShapes(shapes.filter((shape) => editor.getShape(shape.id)));
 }
 
-function zoomToBounds(
-  editor: Editor,
-  bounds: { x: number; y: number; w: number; h: number },
-  animate = false,
-) {
+function zoomToBounds(editor: Editor, bounds: Bounds, animate = false) {
   editor.zoomToBounds(bounds, {
     animation: animate ? { duration: 600 } : undefined,
     inset: 96,
   });
 }
 
-function createResumeAssets(): TLImageAsset[] {
-  return resumeImages.map((image) => ({
-    id: getResumeAssetId(image.id),
-    type: "image",
-    typeName: "asset",
-    meta: {},
-    props: {
-      w: page.w,
-      h: page.h,
-      name: `${image.id}.png`,
-      isAnimated: false,
-      // These are rectangular pages, so we can skip tldraw's transparent PNG alpha hit-testing.
-      mimeType: null,
-      src: `${import.meta.env.BASE_URL}images/resume/${image.id}.png`,
-    },
-  }));
+function createPageAssets(): TLImageAsset[] {
+  return pageGroups.flatMap((group) =>
+    group.images.map((image) => ({
+      id: getPageAssetId(group.id, image.id),
+      type: "image",
+      typeName: "asset",
+      meta: {},
+      props: {
+        w: page.w,
+        h: page.h,
+        name: image.file,
+        isAnimated: false,
+        // These are rectangular pages, so we can skip tldraw's transparent PNG alpha hit-testing.
+        mimeType: null,
+        src: `${import.meta.env.BASE_URL}images/${group.folder}/${image.file}`,
+      },
+    })),
+  );
 }
 
 function createHomeAssets(): TLImageAsset[] {
@@ -231,26 +338,14 @@ function createHomeAssets(): TLImageAsset[] {
   }));
 }
 
-function layoutResumeImages(editor: Editor, animate = false, clear = false) {
-  const layout = getResumeLayout(editor.getViewportScreenBounds());
-  const shapes = getResumeShapes(layout.columns);
-
-  editor.run(() => {
-    if (clear) clearCanvas(editor);
-    createImageAssets(editor, createResumeAssets());
-    createOrUpdateShapes(editor, shapes);
-  });
-
-  zoomToBounds(editor, layout.bounds, animate);
-}
-
-function layoutHomeImages(editor: Editor, animate = false, clear = false) {
+function layoutCanvas(editor: Editor, animate = false, clear = false) {
   const viewport = editor.getViewportScreenBounds();
-  const layout = getHomeLayout(viewport);
-  const shapes = getHomeShapes(viewport);
+  const layout = getCanvasLayout(viewport);
+  const shapes = getCanvasShapes(viewport, layout);
 
   editor.run(() => {
     if (clear) clearCanvas(editor);
+    createImageAssets(editor, createPageAssets());
     createImageAssets(editor, createHomeAssets());
     createOrUpdateShapes(editor, shapes);
   });
@@ -258,7 +353,7 @@ function layoutHomeImages(editor: Editor, animate = false, clear = false) {
   zoomToBounds(editor, layout.bounds, animate);
 }
 
-function zoomToResumeImage(editor: Editor, shapeId: TLShapeId) {
+function zoomToShape(editor: Editor, shapeId: TLShapeId) {
   const bounds = editor.getShapePageBounds(shapeId);
   if (!bounds) return;
 
@@ -266,6 +361,16 @@ function zoomToResumeImage(editor: Editor, shapeId: TLShapeId) {
     animation: { duration: 450 },
     inset: 96,
   });
+}
+
+function zoomToGroup(editor: Editor, groupId: PageGroupId) {
+  const layout = getCanvasLayout(editor.getViewportScreenBounds());
+  zoomToBounds(editor, layout.groupBounds[groupId], true);
+}
+
+function zoomToFullCanvas(editor: Editor) {
+  const layout = getCanvasLayout(editor.getViewportScreenBounds());
+  zoomToBounds(editor, layout.bounds, true);
 }
 
 function getShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
@@ -284,24 +389,7 @@ function getShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
 }
 
 function App() {
-  const [screen, setScreen] = useState<Screen>("home");
   const editorRef = useRef<Editor | null>(null);
-  const screenRef = useRef<Screen>("home");
-
-  const setCurrentScreen = useCallback((nextScreen: Screen, animate = true, clear = true) => {
-    const editor = editorRef.current;
-
-    screenRef.current = nextScreen;
-    setScreen(nextScreen);
-
-    if (!editor) return;
-
-    if (nextScreen === "home") {
-      layoutHomeImages(editor, animate, clear);
-    } else {
-      layoutResumeImages(editor, animate, clear);
-    }
-  }, []);
 
   const handleTouchCapture: TouchEventHandler<HTMLDivElement> = (event) => {
     if (getSeededShapeIdFromElement(event.target)) {
@@ -313,17 +401,9 @@ function App() {
     (editor: Editor) => {
       editorRef.current = editor;
 
-      const layoutCurrentScreen = (animate = false, clear = false) => {
-        if (screenRef.current === "home") {
-          layoutHomeImages(editor, animate, clear);
-        } else {
-          layoutResumeImages(editor, animate, clear);
-        }
-      };
+      layoutCanvas(editor, true, true);
 
-      layoutCurrentScreen(true, true);
-
-      const handleResize = () => layoutCurrentScreen();
+      const handleResize = () => layoutCanvas(editor);
       let pointerDown:
         | {
           point: Vec;
@@ -362,13 +442,20 @@ function App() {
 
         if (distance > 8) return;
 
-        if (screenRef.current === "home" && isHomeResumeShapeId(targetShapeId)) {
-          setCurrentScreen("resume");
+        const targetGroupId = getHomeTargetGroupId(targetShapeId);
+
+        if (targetGroupId) {
+          zoomToGroup(editor, targetGroupId);
           return;
         }
 
-        if (screenRef.current === "resume" && isResumeShapeId(targetShapeId)) {
-          zoomToResumeImage(editor, targetShapeId);
+        if (targetShapeId === getHomeShapeId("intro")) {
+          zoomToFullCanvas(editor);
+          return;
+        }
+
+        if (isPageShapeId(targetShapeId)) {
+          zoomToShape(editor, targetShapeId);
         }
       };
 
@@ -383,12 +470,8 @@ function App() {
         editorRef.current = null;
       };
     },
-    [setCurrentScreen],
+    [],
   );
-
-  const handleBack = () => {
-    setCurrentScreen("home");
-  };
 
   return (
     <div
@@ -397,42 +480,6 @@ function App() {
       onTouchStartCapture={handleTouchCapture}
     >
       <Tldraw hideUi onMount={handleMount} />
-      {screen !== "home" && (
-        <button
-          type="button"
-          aria-label="Back to home"
-          onClick={handleBack}
-          style={{
-            position: "absolute",
-            top: 24,
-            left: 24,
-            zIndex: 1,
-            display: "grid",
-            placeItems: "center",
-            width: 72,
-            height: 72,
-            padding: 0,
-            border: "1px solid rgba(0, 0, 0, 0.14)",
-            borderRadius: 8,
-            background: "#ffffff",
-            color: "#111111",
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
-            cursor: "pointer",
-            touchAction: "manipulation",
-          }}
-        >
-          <svg aria-hidden="true" width="42" height="42" viewBox="0 0 24 24">
-            <path
-              d="M15 5 8 12l7 7"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-            />
-          </svg>
-        </button>
-      )}
     </div>
   );
 }
