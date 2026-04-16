@@ -913,31 +913,32 @@ function App() {
             width: 80,
             height: 80,
             padding: 0,
-            border: "none",
+            border: "4px solid #d8d8d8",
             borderRadius: "50%",
             background: "#ffffff",
-            color: "#999999",
-            boxShadow: "3px 3px 0px 2px #d8d8d8",
+            color: "#d8d8d8",
             cursor: "pointer",
             touchAction: "manipulation",
           }}
         >
           <svg
             aria-hidden="true"
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
+            width="44"
+            height="44"
+            viewBox="-12 -12 24 24"
             style={{
               transform: `rotate(${compassRotation}deg)`,
+              transformOrigin: "center",
               transition: "transform 120ms linear",
             }}
           >
             <path
-              d="M12 3 18 21 12 17 6 21 12 3Z"
-              fill="currentColor"
+              d="M0 8V-8M-6-2 0-8 6-2"
+              fill="none"
               stroke="currentColor"
+              strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="1.5"
+              strokeWidth="2.2"
             />
           </svg>
         </button>
