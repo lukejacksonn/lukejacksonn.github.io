@@ -22,12 +22,12 @@ const resumeImages = [
 ] as const;
 
 const portfolioImages = [
-  { id: "Chatea", label: "Chatea", file: "Chatea.png" },
-  { id: "TinyShop", label: "TinyShop", file: "TinyShop.png" },
-  { id: "Paddock", label: "Paddock", file: "Paddock.png" },
-  { id: "EnergyRank", label: "Energy Rank", file: "EnergyRank.png" },
   { id: "Nitros", label: "Nitros", file: "Nitros.png" },
+  { id: "EnergyRank", label: "Energy Rank", file: "EnergyRank.png" },
+  { id: "TinyShop", label: "TinyShop", file: "TinyShop.png" },
+  { id: "Chatea", label: "Chatea", file: "Chatea.png" },
   { id: "Huddlum", label: "Huddlum", file: "Huddlum.png" },
+  { id: "Paddock", label: "Paddock", file: "Paddock.png" },
 ] as const;
 
 const inspirationImages = [
@@ -120,6 +120,15 @@ function getHomeTargetGroupId(shapeId: TLShapeId) {
   if (!isPageGroupId(homeImage.id)) return;
 
   return homeImage.id;
+}
+
+function getFirstPageShapeId(groupId: PageGroupId) {
+  const group = pageGroups.find((pageGroup) => pageGroup.id === groupId);
+  const firstImage = group?.images[0];
+
+  if (!group || !firstImage) return;
+
+  return getPageShapeId(group.id, firstImage.id);
 }
 
 function getSeededShapeIdFromElement(target: EventTarget | null) {
@@ -249,6 +258,7 @@ function getCanvasLayout(viewport: { w: number; h: number }) {
     isLandscape,
     bounds: getBoundsAround([homeBounds, grid]),
     grid,
+    homeBounds,
     homeOrigin,
     groupBounds,
   };
@@ -338,7 +348,12 @@ function createHomeAssets(): TLImageAsset[] {
   }));
 }
 
-function layoutCanvas(editor: Editor, animate = false, clear = false) {
+function layoutCanvas(
+  editor: Editor,
+  animate = false,
+  clear = false,
+  focus: "canvas" | "home" = "canvas",
+) {
   const viewport = editor.getViewportScreenBounds();
   const layout = getCanvasLayout(viewport);
   const shapes = getCanvasShapes(viewport, layout);
@@ -350,7 +365,7 @@ function layoutCanvas(editor: Editor, animate = false, clear = false) {
     createOrUpdateShapes(editor, shapes);
   });
 
-  zoomToBounds(editor, layout.bounds, animate);
+  zoomToBounds(editor, focus === "home" ? layout.homeBounds : layout.bounds, animate);
 }
 
 function zoomToShape(editor: Editor, shapeId: TLShapeId) {
@@ -363,9 +378,11 @@ function zoomToShape(editor: Editor, shapeId: TLShapeId) {
   });
 }
 
-function zoomToGroup(editor: Editor, groupId: PageGroupId) {
-  const layout = getCanvasLayout(editor.getViewportScreenBounds());
-  zoomToBounds(editor, layout.groupBounds[groupId], true);
+function zoomToFirstPage(editor: Editor, groupId: PageGroupId) {
+  const shapeId = getFirstPageShapeId(groupId);
+  if (!shapeId) return;
+
+  zoomToShape(editor, shapeId);
 }
 
 function zoomToFullCanvas(editor: Editor) {
@@ -401,7 +418,7 @@ function App() {
     (editor: Editor) => {
       editorRef.current = editor;
 
-      layoutCanvas(editor, true, true);
+      layoutCanvas(editor, true, true, "home");
 
       const handleResize = () => layoutCanvas(editor);
       let pointerDown:
@@ -445,7 +462,7 @@ function App() {
         const targetGroupId = getHomeTargetGroupId(targetShapeId);
 
         if (targetGroupId) {
-          zoomToGroup(editor, targetGroupId);
+          zoomToFirstPage(editor, targetGroupId);
           return;
         }
 
