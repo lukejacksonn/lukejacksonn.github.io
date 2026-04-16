@@ -1,4 +1,4 @@
-import { useCallback, useRef, type TouchEventHandler } from "react";
+import { useCallback, useRef, useState, type TouchEventHandler } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AssetRecordType,
@@ -65,6 +65,9 @@ const homeImages = [
 
 type PageGroupId = (typeof pageGroups)[number]["id"];
 type Bounds = { x: number; y: number; w: number; h: number };
+type CanvasFocus = { type: "home" } | { type: "grid" } | { type: "shape"; shapeId: TLShapeId };
+
+const cameraAnimationMs = 600;
 
 const page = {
   w: 1190,
@@ -221,7 +224,7 @@ function getCanvasLayout(viewport: { w: number; h: number }) {
   const isLandscape = viewport.w >= viewport.h;
   const homeLayout = getHomeLayout(viewport);
   const gridSize = getGridSize(isLandscape);
-  const layoutGap = page.gap * 2;
+  const layoutGap = Math.max(viewport.w, viewport.h, page.gap * 2);
   const homeOrigin = isLandscape
     ? { x: 0, y: (gridSize.h - homeLayout.bounds.h) / 2 }
     : { x: (gridSize.w - homeLayout.bounds.w) / 2, y: 0 };
@@ -286,8 +289,16 @@ function getPageShapes(layout: ReturnType<typeof getCanvasLayout>) {
   );
 }
 
-function getCanvasShapes(viewport: { w: number; h: number }, layout: ReturnType<typeof getCanvasLayout>) {
-  return [...getHomeShapes(viewport, layout.homeOrigin), ...getPageShapes(layout)];
+function getCanvasShapes(
+  viewport: { w: number; h: number },
+  layout: ReturnType<typeof getCanvasLayout>,
+  includeHome = true,
+) {
+  const pageShapes = getPageShapes(layout);
+
+  if (!includeHome) return pageShapes;
+
+  return [...getHomeShapes(viewport, layout.homeOrigin), ...pageShapes];
 }
 
 function clearCanvas(editor: Editor) {
@@ -299,6 +310,16 @@ function createImageAssets(editor: Editor, assets: TLImageAsset[]) {
   editor.createAssets(assets.filter((asset) => !editor.getAsset(asset.id)));
 }
 
+function deleteHomeShapes(editor: Editor) {
+  const homeShapeIds = homeImages
+    .map((image) => getHomeShapeId(image.id))
+    .filter((shapeId) => editor.getShape(shapeId));
+
+  if (homeShapeIds.length === 0) return;
+
+  editor.deleteShapes(homeShapeIds);
+}
+
 function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanvasShapes>) {
   editor.createShapes(shapes.filter((shape) => !editor.getShape(shape.id)));
   editor.updateShapes(shapes.filter((shape) => editor.getShape(shape.id)));
@@ -306,7 +327,7 @@ function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanva
 
 function zoomToBounds(editor: Editor, bounds: Bounds, animate = false) {
   editor.zoomToBounds(bounds, {
-    animation: animate ? { duration: 600 } : undefined,
+    animation: animate ? { duration: cameraAnimationMs } : undefined,
     inset: 96,
   });
 }
@@ -348,46 +369,47 @@ function createHomeAssets(): TLImageAsset[] {
   }));
 }
 
+function focusCamera(editor: Editor, layout: ReturnType<typeof getCanvasLayout>, focus: CanvasFocus, animate: boolean) {
+  if (focus.type === "home") {
+    zoomToBounds(editor, layout.homeBounds, animate);
+    return;
+  }
+
+  if (focus.type === "grid") {
+    zoomToBounds(editor, layout.grid, animate);
+    return;
+  }
+
+  const bounds = editor.getShapePageBounds(focus.shapeId);
+
+  if (bounds) {
+    zoomToBounds(editor, bounds, animate);
+  }
+}
+
 function layoutCanvas(
   editor: Editor,
   animate = false,
   clear = false,
-  focus: "canvas" | "home" = "canvas",
+  focus: CanvasFocus = { type: "grid" },
+  includeHome = focus.type === "home",
 ) {
   const viewport = editor.getViewportScreenBounds();
   const layout = getCanvasLayout(viewport);
-  const shapes = getCanvasShapes(viewport, layout);
+  const shapes = getCanvasShapes(viewport, layout, includeHome);
 
   editor.run(() => {
     if (clear) clearCanvas(editor);
     createImageAssets(editor, createPageAssets());
-    createImageAssets(editor, createHomeAssets());
+    if (includeHome) {
+      createImageAssets(editor, createHomeAssets());
+    } else {
+      deleteHomeShapes(editor);
+    }
     createOrUpdateShapes(editor, shapes);
   });
 
-  zoomToBounds(editor, focus === "home" ? layout.homeBounds : layout.bounds, animate);
-}
-
-function zoomToShape(editor: Editor, shapeId: TLShapeId) {
-  const bounds = editor.getShapePageBounds(shapeId);
-  if (!bounds) return;
-
-  editor.zoomToBounds(bounds, {
-    animation: { duration: 450 },
-    inset: 96,
-  });
-}
-
-function zoomToFirstPage(editor: Editor, groupId: PageGroupId) {
-  const shapeId = getFirstPageShapeId(groupId);
-  if (!shapeId) return;
-
-  zoomToShape(editor, shapeId);
-}
-
-function zoomToFullCanvas(editor: Editor) {
-  const layout = getCanvasLayout(editor.getViewportScreenBounds());
-  zoomToBounds(editor, layout.bounds, true);
+  focusCamera(editor, layout, focus, animate);
 }
 
 function getShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
@@ -407,6 +429,56 @@ function getShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
 
 function App() {
   const editorRef = useRef<Editor | null>(null);
+  const focusRef = useRef<CanvasFocus>({ type: "home" });
+  const hideHomeTimeoutRef = useRef<number | undefined>(undefined);
+  const focusRequestIdRef = useRef(0);
+  const [isHomeFocused, setIsHomeFocused] = useState(true);
+
+  const clearPendingHomeHide = useCallback(() => {
+    if (hideHomeTimeoutRef.current === undefined) return;
+
+    window.clearTimeout(hideHomeTimeoutRef.current);
+    hideHomeTimeoutRef.current = undefined;
+  }, []);
+
+  const focusCanvas = useCallback((focus: CanvasFocus, animate = true) => {
+    const wasHomeFocused = focusRef.current.type === "home";
+    const requestId = focusRequestIdRef.current + 1;
+    const includeHome = focus.type === "home" || (wasHomeFocused && animate);
+
+    focusRequestIdRef.current = requestId;
+    const editor = editorRef.current;
+
+    clearPendingHomeHide();
+    focusRef.current = focus;
+    setIsHomeFocused(focus.type === "home");
+
+    if (!editor) return;
+
+    layoutCanvas(editor, animate, false, focus, includeHome);
+
+    if (focus.type === "home" || !includeHome) return;
+
+    hideHomeTimeoutRef.current = window.setTimeout(
+      () => {
+        hideHomeTimeoutRef.current = undefined;
+
+        if (focusRequestIdRef.current !== requestId) return;
+
+        const currentEditor = editorRef.current;
+        if (!currentEditor) return;
+
+        currentEditor.run(() => {
+          deleteHomeShapes(currentEditor);
+        });
+      },
+      animate ? cameraAnimationMs : 0,
+    );
+  }, [clearPendingHomeHide]);
+
+  const handleHomeClick = () => {
+    focusCanvas({ type: "home" });
+  };
 
   const handleTouchCapture: TouchEventHandler<HTMLDivElement> = (event) => {
     if (getSeededShapeIdFromElement(event.target)) {
@@ -417,10 +489,12 @@ function App() {
   const handleMount = useCallback(
     (editor: Editor) => {
       editorRef.current = editor;
+      focusRef.current = { type: "home" };
+      setIsHomeFocused(true);
 
-      layoutCanvas(editor, true, true, "home");
+      layoutCanvas(editor, true, true, focusRef.current);
 
-      const handleResize = () => layoutCanvas(editor);
+      const handleResize = () => layoutCanvas(editor, false, false, focusRef.current);
       let pointerDown:
         | {
           point: Vec;
@@ -462,17 +536,20 @@ function App() {
         const targetGroupId = getHomeTargetGroupId(targetShapeId);
 
         if (targetGroupId) {
-          zoomToFirstPage(editor, targetGroupId);
+          const shapeId = getFirstPageShapeId(targetGroupId);
+          if (shapeId) {
+            focusCanvas({ type: "shape", shapeId });
+          }
           return;
         }
 
         if (targetShapeId === getHomeShapeId("intro")) {
-          zoomToFullCanvas(editor);
+          focusCanvas({ type: "grid" });
           return;
         }
 
         if (isPageShapeId(targetShapeId)) {
-          zoomToShape(editor, targetShapeId);
+          focusCanvas({ type: "shape", shapeId: targetShapeId });
         }
       };
 
@@ -482,12 +559,13 @@ function App() {
       editor.setCurrentTool("select");
 
       return () => {
+        clearPendingHomeHide();
         editor.off("resize", handleResize);
         editor.off("event", handleEvent);
         editorRef.current = null;
       };
     },
-    [],
+    [clearPendingHomeHide, focusCanvas],
   );
 
   return (
@@ -497,6 +575,33 @@ function App() {
       onTouchStartCapture={handleTouchCapture}
     >
       <Tldraw hideUi onMount={handleMount} />
+      {!isHomeFocused && (
+        <button
+          type="button"
+          aria-label="Focus landing screen"
+          onClick={handleHomeClick}
+          style={{
+            position: "absolute",
+            top: 24,
+            left: 24,
+            zIndex: 1,
+            display: "grid",
+            placeItems: "center",
+            height: 48,
+            padding: "0 18px",
+            border: "1px solid rgba(0, 0, 0, 0.14)",
+            borderRadius: 8,
+            background: "#ffffff",
+            color: "#111111",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.18)",
+            cursor: "pointer",
+            font: "600 16px/1 system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+            touchAction: "manipulation",
+          }}
+        >
+          Home
+        </button>
+      )}
     </div>
   );
 }
