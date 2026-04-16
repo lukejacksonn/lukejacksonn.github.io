@@ -202,6 +202,7 @@ function getHomeShapes(viewport: { w: number; h: number }, origin = { x: 0, y: 0
   return homeImages.map((image) => ({
     id: getHomeShapeId(image.id),
     type: "image" as const,
+    isLocked: true,
     x: origin.x + layout.positions[image.id].x,
     y: origin.y + layout.positions[image.id].y,
     props: {
@@ -331,6 +332,7 @@ function getPageShapes(layout: ReturnType<typeof getCanvasLayout>, visiblePages:
       return {
         id: getPageShapeId(group.id, image.id),
         type: "image" as const,
+        isLocked: true,
         x: layout.grid.x + column * (page.w + page.gap),
         y: layout.grid.y + row * (page.h + page.gap),
         props: {
@@ -376,7 +378,7 @@ function getCanvasShapes(
 
 function clearCanvas(editor: Editor) {
   editor.selectNone();
-  editor.deleteShapes([...editor.getCurrentPageShapeIds()]);
+  deleteExistingShapes(editor, [...editor.getCurrentPageShapeIds()]);
 }
 
 function createImageAssets(editor: Editor, assets: TLImageAsset[]) {
@@ -392,7 +394,12 @@ function deleteExistingShapes(editor: Editor, shapeIds: TLShapeId[]) {
 
   if (existingShapeIds.length === 0) return;
 
-  editor.deleteShapes(existingShapeIds);
+  editor.run(
+    () => {
+      editor.deleteShapes(existingShapeIds);
+    },
+    { ignoreShapeLock: true },
+  );
 }
 
 function deleteHiddenPageShapes(editor: Editor, visiblePages: VisiblePages) {
@@ -405,12 +412,17 @@ function deleteHiddenPageShapes(editor: Editor, visiblePages: VisiblePages) {
 
   if (hiddenShapeIds.length === 0) return;
 
-  editor.deleteShapes(hiddenShapeIds);
+  deleteExistingShapes(editor, hiddenShapeIds);
 }
 
 function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanvasShapes>) {
-  editor.createShapes(shapes.filter((shape) => !editor.getShape(shape.id)));
-  editor.updateShapes(shapes.filter((shape) => editor.getShape(shape.id)));
+  editor.run(
+    () => {
+      editor.createShapes(shapes.filter((shape) => !editor.getShape(shape.id)));
+      editor.updateShapes(shapes.filter((shape) => editor.getShape(shape.id)));
+    },
+    { ignoreShapeLock: true },
+  );
 }
 
 function zoomToBounds(editor: Editor, bounds: Bounds, animate = false) {
@@ -510,6 +522,7 @@ function getShapeIdAtPointer(editor: Editor, info: TLEventInfo) {
       ? info.shape
       : editor.getShapeAtPoint(editor.inputs.getCurrentPagePoint(), {
         hitInside: true,
+        hitLocked: true,
         margin: editor.options.hitTestMargin / editor.getZoomLevel(),
         renderingOnly: true,
       });
@@ -894,6 +907,7 @@ function App() {
   return (
     <div
       style={{ position: "fixed", inset: 0 }}
+      onContextMenu={(event) => event.preventDefault()}
       onTouchEndCapture={handleTouchCapture}
       onTouchStartCapture={handleTouchCapture}
     >
