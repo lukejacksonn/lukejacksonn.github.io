@@ -72,6 +72,9 @@ type CanvasFocus =
 type VisiblePages = "all" | "none" | PageGroupId;
 
 const cameraAnimationMs = 600;
+const homeStaggerMs = 80;
+const gridStaggerMs = 35;
+const transitionPauseMs = 80;
 
 const page = {
   w: 1190,
@@ -100,6 +103,10 @@ function getHomeAssetId(id: (typeof homeImages)[number]["id"]) {
 
 function getHomeShapeId(id: (typeof homeImages)[number]["id"]) {
   return createShapeId(`home-${id}`);
+}
+
+function getHomeShapeIds() {
+  return homeImages.map((image) => getHomeShapeId(image.id));
 }
 
 function isPageGroupId(id: string): id is PageGroupId {
@@ -345,13 +352,15 @@ function createImageAssets(editor: Editor, assets: TLImageAsset[]) {
 }
 
 function deleteHomeShapes(editor: Editor) {
-  const homeShapeIds = homeImages
-    .map((image) => getHomeShapeId(image.id))
-    .filter((shapeId) => editor.getShape(shapeId));
+  deleteExistingShapes(editor, getHomeShapeIds());
+}
 
-  if (homeShapeIds.length === 0) return;
+function deleteExistingShapes(editor: Editor, shapeIds: TLShapeId[]) {
+  const existingShapeIds = shapeIds.filter((shapeId) => editor.getShape(shapeId));
 
-  editor.deleteShapes(homeShapeIds);
+  if (existingShapeIds.length === 0) return;
+
+  editor.deleteShapes(existingShapeIds);
 }
 
 function deleteHiddenPageShapes(editor: Editor, visiblePages: VisiblePages) {
@@ -481,8 +490,16 @@ function App() {
   const focusRef = useRef<CanvasFocus>({ type: "home" });
   const hideHomeTimeoutRef = useRef<number | undefined>(undefined);
   const pendingVisiblePagesRef = useRef<VisiblePages | undefined>(undefined);
+  const transitionTimeoutsRef = useRef<number[]>([]);
+  const isTransitioningRef = useRef(false);
   const focusRequestIdRef = useRef(0);
   const [isHomeFocused, setIsHomeFocused] = useState(true);
+
+  const clearTransitionTimeouts = useCallback(() => {
+    transitionTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+    transitionTimeoutsRef.current = [];
+    isTransitioningRef.current = false;
+  }, []);
 
   const clearPendingHomeHide = useCallback(() => {
     if (hideHomeTimeoutRef.current === undefined) return;
@@ -490,6 +507,11 @@ function App() {
     window.clearTimeout(hideHomeTimeoutRef.current);
     hideHomeTimeoutRef.current = undefined;
     pendingVisiblePagesRef.current = undefined;
+  }, []);
+
+  const scheduleTransitionStep = useCallback((callback: () => void, delay: number) => {
+    const timeout = window.setTimeout(callback, delay);
+    transitionTimeoutsRef.current.push(timeout);
   }, []);
 
   const focusCanvas = useCallback((focus: CanvasFocus, animate = true) => {
@@ -507,6 +529,7 @@ function App() {
     const editor = editorRef.current;
 
     clearPendingHomeHide();
+    clearTransitionTimeouts();
     focusRef.current = focus;
     setIsHomeFocused(focus.type === "home");
 
@@ -539,9 +562,177 @@ function App() {
       },
       animate ? cameraAnimationMs : 0,
     );
-  }, [clearPendingHomeHide]);
+  }, [clearPendingHomeHide, clearTransitionTimeouts]);
+
+  const startGridTransition = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    clearPendingHomeHide();
+    clearTransitionTimeouts();
+
+    const requestId = focusRequestIdRef.current + 1;
+    focusRequestIdRef.current = requestId;
+    isTransitioningRef.current = true;
+    focusRef.current = { type: "grid" };
+    pendingVisiblePagesRef.current = undefined;
+
+    const homeShapeIds = getHomeShapeIds();
+    const pageShapeIds = getPageShapeIds("all");
+    const zoomDelay = homeShapeIds.length * homeStaggerMs + transitionPauseMs;
+    const revealDelay = zoomDelay + cameraAnimationMs + transitionPauseMs;
+
+    homeShapeIds.forEach((shapeId, index) => {
+      scheduleTransitionStep(() => {
+        if (focusRequestIdRef.current !== requestId) return;
+
+        const currentEditor = editorRef.current;
+        if (!currentEditor) return;
+
+        currentEditor.run(() => {
+          deleteExistingShapes(currentEditor, [shapeId]);
+        });
+      }, index * homeStaggerMs);
+    });
+
+    scheduleTransitionStep(() => {
+      if (focusRequestIdRef.current !== requestId) return;
+
+      const currentEditor = editorRef.current;
+      if (!currentEditor) return;
+
+      currentEditor.run(() => {
+        createImageAssets(currentEditor, createPageAssets());
+      });
+      focusCamera(
+        currentEditor,
+        getCanvasLayout(currentEditor.getViewportScreenBounds()),
+        { type: "grid" },
+        true,
+      );
+    }, zoomDelay);
+
+    pageShapeIds.forEach((shapeId, index) => {
+      scheduleTransitionStep(() => {
+        if (focusRequestIdRef.current !== requestId) return;
+
+        const currentEditor = editorRef.current;
+        if (!currentEditor) return;
+
+        const layout = getCanvasLayout(currentEditor.getViewportScreenBounds());
+        const shape = getPageShapes(layout, "all").find((pageShape) => pageShape.id === shapeId);
+
+        if (!shape) return;
+
+        currentEditor.run(() => {
+          createOrUpdateShapes(currentEditor, [shape]);
+        });
+      }, revealDelay + index * gridStaggerMs);
+    });
+
+    scheduleTransitionStep(() => {
+      if (focusRequestIdRef.current !== requestId) return;
+
+      transitionTimeoutsRef.current = [];
+      isTransitioningRef.current = false;
+      setIsHomeFocused(false);
+    }, revealDelay + pageShapeIds.length * gridStaggerMs + transitionPauseMs);
+  }, [clearPendingHomeHide, clearTransitionTimeouts, scheduleTransitionStep]);
+
+  const startHomeTransition = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const previousFocus = focusRef.current;
+    const previousVisiblePages = getVisiblePages(previousFocus);
+    const pageShapeIds = getPageShapeIds(previousVisiblePages);
+
+    clearPendingHomeHide();
+    clearTransitionTimeouts();
+
+    const requestId = focusRequestIdRef.current + 1;
+    focusRequestIdRef.current = requestId;
+    isTransitioningRef.current = true;
+    focusRef.current = { type: "home" };
+    pendingVisiblePagesRef.current = previousVisiblePages;
+    setIsHomeFocused(true);
+
+    const zoomDelay = pageShapeIds.length * gridStaggerMs + transitionPauseMs;
+    const revealDelay = zoomDelay + cameraAnimationMs + transitionPauseMs;
+    const homeShapeIds = getHomeShapeIds();
+
+    pageShapeIds.forEach((shapeId, index) => {
+      scheduleTransitionStep(() => {
+        if (focusRequestIdRef.current !== requestId) return;
+
+        const currentEditor = editorRef.current;
+        if (!currentEditor) return;
+
+        currentEditor.run(() => {
+          deleteExistingShapes(currentEditor, [shapeId]);
+        });
+      }, index * gridStaggerMs);
+    });
+
+    scheduleTransitionStep(() => {
+      if (focusRequestIdRef.current !== requestId) return;
+
+      const currentEditor = editorRef.current;
+      if (!currentEditor) return;
+
+      currentEditor.run(() => {
+        createImageAssets(currentEditor, createHomeAssets());
+      });
+      focusCamera(
+        currentEditor,
+        getCanvasLayout(currentEditor.getViewportScreenBounds()),
+        { type: "home" },
+        true,
+      );
+    }, zoomDelay);
+
+    homeShapeIds.forEach((shapeId, index) => {
+      scheduleTransitionStep(() => {
+        if (focusRequestIdRef.current !== requestId) return;
+
+        const currentEditor = editorRef.current;
+        if (!currentEditor) return;
+
+        const layout = getCanvasLayout(currentEditor.getViewportScreenBounds());
+        const shape = getHomeShapes(currentEditor.getViewportScreenBounds(), layout.homeOrigin).find(
+          (homeShape) => homeShape.id === shapeId,
+        );
+
+        if (!shape) return;
+
+        currentEditor.run(() => {
+          createOrUpdateShapes(currentEditor, [shape]);
+        });
+      }, revealDelay + index * homeStaggerMs);
+    });
+
+    scheduleTransitionStep(() => {
+      if (focusRequestIdRef.current !== requestId) return;
+
+      const currentEditor = editorRef.current;
+      if (currentEditor) {
+        currentEditor.run(() => {
+          deleteHiddenPageShapes(currentEditor, "none");
+        });
+      }
+
+      transitionTimeoutsRef.current = [];
+      isTransitioningRef.current = false;
+      pendingVisiblePagesRef.current = undefined;
+    }, revealDelay + homeShapeIds.length * homeStaggerMs + transitionPauseMs);
+  }, [clearPendingHomeHide, clearTransitionTimeouts, scheduleTransitionStep]);
 
   const handleHomeClick = () => {
+    if (focusRef.current.type === "grid") {
+      startHomeTransition();
+      return;
+    }
+
     focusCanvas({ type: "home" });
   };
 
@@ -559,7 +750,9 @@ function App() {
 
       layoutCanvas(editor, true, true, focusRef.current);
 
-      const handleResize = () =>
+      const handleResize = () => {
+        if (isTransitioningRef.current) return;
+
         layoutCanvas(
           editor,
           false,
@@ -568,6 +761,7 @@ function App() {
           focusRef.current.type === "home" || hideHomeTimeoutRef.current !== undefined,
           pendingVisiblePagesRef.current ?? getVisiblePages(focusRef.current),
         );
+      };
       let pointerDown:
         | {
           point: Vec;
@@ -577,6 +771,7 @@ function App() {
         | undefined;
 
       const handleEvent = (info: TLEventInfo) => {
+        if (isTransitioningRef.current) return;
         if (info.type !== "pointer") return;
         if (info.button !== 0) return;
 
@@ -617,7 +812,7 @@ function App() {
         }
 
         if (targetShapeId === getHomeShapeId("intro")) {
-          focusCanvas({ type: "grid" });
+          startGridTransition();
           return;
         }
 
@@ -636,12 +831,13 @@ function App() {
 
       return () => {
         clearPendingHomeHide();
+        clearTransitionTimeouts();
         editor.off("resize", handleResize);
         editor.off("event", handleEvent);
         editorRef.current = null;
       };
     },
-    [clearPendingHomeHide, focusCanvas],
+    [clearPendingHomeHide, clearTransitionTimeouts, focusCanvas, startGridTransition],
   );
 
   return (
