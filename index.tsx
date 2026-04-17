@@ -31,11 +31,11 @@ const portfolioImages = [
 ] as const;
 
 const inspirationImages = [
-  { id: "People", label: "People", file: "People.png" },
   { id: "Films", label: "Films", file: "Films.png" },
-  { id: "Things", label: "Things", file: "Things.png" },
-  { id: "Places", label: "Places", file: "Places.png" },
   { id: "Music", label: "Music", file: "Music.png" },
+  { id: "Things", label: "Things", file: "Things.png" },
+  { id: "People", label: "People", file: "People.png" },
+  { id: "Places", label: "Places", file: "Places.png" },
   { id: "Books", label: "Books", file: "Books.png" },
 ] as const;
 
@@ -927,10 +927,10 @@ function App() {
             width: 80,
             height: 80,
             padding: 0,
-            border: "1px solid #d8d8d8",
+            border: "none",
             borderRadius: "50%",
-            background: "#ffffff",
-            color: "#d8d8d8",
+            background: "#000000",
+            color: "#ffffff",
             cursor: "pointer",
             touchAction: "manipulation",
           }}
