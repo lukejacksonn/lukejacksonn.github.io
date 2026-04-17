@@ -1299,7 +1299,9 @@ function App() {
       onTouchEndCapture={handleTouchCapture}
       onTouchStartCapture={handleTouchCapture}
     >
-      <Tldraw hideUi onMount={handleMount} />
+      <Tldraw hideUi onMount={handleMount} licenseKey={
+        "tldraw-2026-07-26/WyJFb2NyeWQxVSIsWyIqIl0sMTYsIjIwMjYtMDctMjYiXQ.SRvt6PmZKkxVOnee3fVyAI6erE0QaQC0qKIP/m7NAbyNCy0XY+nIqkKTv0ewtb6nprtHaw21JgD+YYW2TkNHYQ"
+      } />
       {!isHomeFocused && (
         <button
           type="button"
