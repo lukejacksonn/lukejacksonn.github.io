@@ -15,30 +15,30 @@ import {
 import "tldraw/tldraw.css";
 
 const resumeImages = [
-  { id: "Cover", label: "Cover", file: "Cover.png" },
-  { id: "About", label: "About", file: "About.png" },
-  { id: "Work", label: "Work", file: "Work.png" },
-  { id: "Toolbox", label: "Toolbox", file: "Toolbox.png" },
-  { id: "Extra", label: "Extra", file: "Extra.png" },
-  { id: "Contact", label: "Contact", file: "Contact.png" },
+  { id: "Cover", label: "Cover", file: "cover.png" },
+  { id: "About", label: "About", file: "about.png" },
+  { id: "Work", label: "Work", file: "work.png" },
+  { id: "Toolbox", label: "Toolbox", file: "toolbox.png" },
+  { id: "Extra", label: "Extra", file: "extra.png" },
+  { id: "Contact", label: "Contact", file: "contact.png" },
 ] as const;
 
 const portfolioImages = [
-  { id: "Nitros", label: "Nitros", file: "Nitros.png" },
-  { id: "EnergyRank", label: "Energy Rank", file: "EnergyRank.png" },
-  { id: "TinyShop", label: "TinyShop", file: "TinyShop.png" },
-  { id: "Chatea", label: "Chatea", file: "Chatea.png" },
-  { id: "Huddlum", label: "Huddlum", file: "Huddlum.png" },
-  { id: "Paddock", label: "Paddock", file: "Paddock.png" },
+  { id: "Nitros", label: "Nitros", file: "nitros.png" },
+  { id: "EnergyRank", label: "Energy Rank", file: "energyrank.png" },
+  { id: "TinyShop", label: "TinyShop", file: "tinyshop.png" },
+  { id: "Chatea", label: "Chatea", file: "chatea.png" },
+  { id: "Huddlum", label: "Huddlum", file: "huddlum.png" },
+  { id: "Paddock", label: "Paddock", file: "paddock.png" },
 ] as const;
 
 const inspirationImages = [
-  { id: "Music", label: "Music", file: "Music.png" },
-  { id: "Films", label: "Films", file: "Films.png" },
-  { id: "Things", label: "Things", file: "Things.png" },
-  { id: "People", label: "People", file: "People.png" },
-  { id: "Places", label: "Places", file: "Places.png" },
-  { id: "Books", label: "Books", file: "Books.png" },
+  { id: "Music", label: "Music", file: "music.png" },
+  { id: "Films", label: "Films", file: "films.png" },
+  { id: "Things", label: "Things", file: "things.png" },
+  { id: "People", label: "People", file: "people.png" },
+  { id: "Places", label: "Places", file: "places.png" },
+  { id: "Books", label: "Books", file: "books.png" },
 ] as const;
 
 const photoImages = [
@@ -58,11 +58,11 @@ const pageGroups = [
 ] as const;
 
 const homeImages = [
-  { id: "intro", label: "Intro", file: "Intro.png", w: 595, h: 595 },
-  { id: "resume", label: "Resume", file: "Resume.png", w: 287, h: 287 },
-  { id: "portfolio", label: "Portfolio", file: "Portfolio.png", w: 287, h: 287 },
-  { id: "inspiration", label: "Inspiration", file: "Inspiration.png", w: 287, h: 287 },
-  { id: "photos", label: "Photos", file: "Photos.png", w: 287, h: 287 },
+  { id: "intro", label: "Intro", file: "intro.png", w: 595, h: 595 },
+  { id: "resume", label: "Resume", file: "resume.png", w: 287, h: 287 },
+  { id: "portfolio", label: "Portfolio", file: "portfolio.png", w: 287, h: 287 },
+  { id: "inspiration", label: "Inspiration", file: "inspiration.png", w: 287, h: 287 },
+  { id: "photos", label: "Photos", file: "photos.png", w: 287, h: 287 },
 ] as const;
 
 type PageGroupId = (typeof pageGroups)[number]["id"];
@@ -118,28 +118,28 @@ const homeLinkDecorations = [
   {
     groupId: "resume",
     label: "Resume marker",
-    file: "Triangle.svg",
+    file: "triangle.svg",
     w: 96,
     h: 83,
   },
   {
     groupId: "portfolio",
     label: "Portfolio marker",
-    file: "Star.svg",
+    file: "star.svg",
     w: 116,
     h: 110,
   },
   {
     groupId: "inspiration",
     label: "Inspiration marker",
-    file: "Square.svg",
+    file: "square.svg",
     w: 80,
     h: 80,
   },
   {
     groupId: "photos",
     label: "Photos marker",
-    file: "Circle.svg",
+    file: "circle.svg",
     w: 94,
     h: 94,
   },
