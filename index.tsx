@@ -31,8 +31,8 @@ const portfolioImages = [
 ] as const;
 
 const inspirationImages = [
-  { id: "Films", label: "Films", file: "Films.png" },
   { id: "Music", label: "Music", file: "Music.png" },
+  { id: "Films", label: "Films", file: "Films.png" },
   { id: "Things", label: "Things", file: "Things.png" },
   { id: "People", label: "People", file: "People.png" },
   { id: "Places", label: "Places", file: "Places.png" },
