@@ -72,8 +72,8 @@ type CanvasFocus =
 type VisiblePages = "all" | "none" | PageGroupId;
 
 const cameraAnimationMs = 1200;
-const homeStaggerMs = 80;
-const gridStaggerMs = 35;
+const homeStaggerMs = 40;
+const gridStaggerMs = 20;
 const transitionPauseMs = 80;
 
 const page = {
@@ -87,6 +87,29 @@ const home = {
   h: 595,
   tile: 287,
   gap: 21,
+};
+
+const socialLinks = [
+  {
+    id: "github",
+    label: "GitHub profile",
+    url: "https://github.com/lukejacksonn",
+    file: "github.png",
+    assetSize: 120,
+  },
+  {
+    id: "x",
+    label: "X profile",
+    url: "https://x.com/lukejacksonn",
+    file: "x.png",
+    assetSize: 128,
+  },
+] as const;
+
+const socialIcon = {
+  size: 56,
+  gap: 32,
+  margin: 56,
 };
 
 function springEase(t: number) {
@@ -114,8 +137,19 @@ function getHomeShapeId(id: (typeof homeImages)[number]["id"]) {
   return createShapeId(`home-${id}`);
 }
 
+function getSocialAssetId(id: (typeof socialLinks)[number]["id"]) {
+  return AssetRecordType.createId(id);
+}
+
+function getSocialShapeId(id: (typeof socialLinks)[number]["id"]) {
+  return createShapeId(`home-${id}`);
+}
+
 function getHomeShapeIds() {
-  return homeImages.map((image) => getHomeShapeId(image.id));
+  return [
+    ...homeImages.map((image) => getHomeShapeId(image.id)),
+    ...socialLinks.map((link) => getSocialShapeId(link.id)),
+  ];
 }
 
 function isPageGroupId(id: string): id is PageGroupId {
@@ -137,7 +171,7 @@ function getPageShapeGroupId(shapeId: TLShapeId) {
 }
 
 function isHomeShapeId(shapeId: TLShapeId) {
-  return homeImages.some((image) => getHomeShapeId(image.id) === shapeId);
+  return getHomeShapeIds().includes(shapeId);
 }
 
 function isSeededShapeId(shapeId: TLShapeId) {
@@ -151,6 +185,10 @@ function getHomeTargetGroupId(shapeId: TLShapeId) {
   if (!isPageGroupId(homeImage.id)) return;
 
   return homeImage.id;
+}
+
+function getSocialLinkForShapeId(shapeId: TLShapeId) {
+  return socialLinks.find((link) => getSocialShapeId(link.id) === shapeId);
 }
 
 function getFirstPageShapeId(groupId: PageGroupId) {
@@ -207,20 +245,42 @@ function getHomeLayout(viewport: { w: number; h: number }) {
 
 function getHomeShapes(viewport: { w: number; h: number }, origin = { x: 0, y: 0 }) {
   const layout = getHomeLayout(viewport);
+  const introPosition = layout.positions.intro;
 
-  return homeImages.map((image) => ({
-    id: getHomeShapeId(image.id),
-    type: "image" as const,
-    isLocked: true,
-    x: origin.x + layout.positions[image.id].x,
-    y: origin.y + layout.positions[image.id].y,
-    props: {
-      assetId: getHomeAssetId(image.id),
-      w: image.w,
-      h: image.h,
-      altText: image.label,
-    },
-  }));
+  return [
+    ...homeImages.map((image) => ({
+      id: getHomeShapeId(image.id),
+      type: "image" as const,
+      isLocked: true,
+      x: origin.x + layout.positions[image.id].x,
+      y: origin.y + layout.positions[image.id].y,
+      props: {
+        assetId: getHomeAssetId(image.id),
+        w: image.w,
+        h: image.h,
+        altText: image.label,
+      },
+    })),
+    ...socialLinks.map((link, index) => ({
+      id: getSocialShapeId(link.id),
+      type: "image" as const,
+      isLocked: true,
+      x:
+        origin.x +
+        introPosition.x +
+        home.w -
+        socialIcon.margin -
+        socialIcon.size -
+        index * (socialIcon.size + socialIcon.gap),
+      y: origin.y + introPosition.y + home.h - socialIcon.size - socialIcon.margin,
+      props: {
+        assetId: getSocialAssetId(link.id),
+        w: socialIcon.size,
+        h: socialIcon.size,
+        altText: link.label,
+      },
+    })),
+  ];
 }
 
 function getGridSize(isLandscape: boolean) {
@@ -394,6 +454,16 @@ function createImageAssets(editor: Editor, assets: TLImageAsset[]) {
   editor.createAssets(assets.filter((asset) => !editor.getAsset(asset.id)));
 }
 
+function bringSocialShapesToFront(editor: Editor) {
+  const shapeIds = socialLinks
+    .map((link) => getSocialShapeId(link.id))
+    .filter((shapeId) => editor.getShape(shapeId));
+
+  if (shapeIds.length === 0) return;
+
+  editor.bringToFront(shapeIds);
+}
+
 function deleteHomeShapes(editor: Editor) {
   deleteExistingShapes(editor, getHomeShapeIds());
 }
@@ -429,6 +499,7 @@ function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanva
     () => {
       editor.createShapes(shapes.filter((shape) => !editor.getShape(shape.id)));
       editor.updateShapes(shapes.filter((shape) => editor.getShape(shape.id)));
+      bringSocialShapesToFront(editor);
     },
     { ignoreShapeLock: true },
   );
@@ -462,20 +533,36 @@ function createPageAssets(): TLImageAsset[] {
 }
 
 function createHomeAssets(): TLImageAsset[] {
-  return homeImages.map((image) => ({
-    id: getHomeAssetId(image.id),
-    type: "image",
-    typeName: "asset",
-    meta: {},
-    props: {
-      w: image.w,
-      h: image.h,
-      name: image.file,
-      isAnimated: false,
-      mimeType: null,
-      src: `${import.meta.env.BASE_URL}images/home/${image.file}`,
-    },
-  }));
+  return [
+    ...homeImages.map((image) => ({
+      id: getHomeAssetId(image.id),
+      type: "image" as const,
+      typeName: "asset" as const,
+      meta: {},
+      props: {
+        w: image.w,
+        h: image.h,
+        name: image.file,
+        isAnimated: false,
+        mimeType: null,
+        src: `${import.meta.env.BASE_URL}images/home/${image.file}`,
+      },
+    })),
+    ...socialLinks.map((link) => ({
+      id: getSocialAssetId(link.id),
+      type: "image" as const,
+      typeName: "asset" as const,
+      meta: {},
+      props: {
+        w: link.assetSize,
+        h: link.assetSize,
+        name: link.file,
+        isAnimated: false,
+        mimeType: null,
+        src: `${import.meta.env.BASE_URL}images/${link.file}`,
+      },
+    })),
+  ];
 }
 
 function focusCamera(editor: Editor, layout: ReturnType<typeof getCanvasLayout>, focus: CanvasFocus, animate: boolean) {
@@ -871,6 +958,13 @@ function App() {
         pointerDown = undefined;
 
         if (distance > 8) return;
+
+        const socialLink = getSocialLinkForShapeId(targetShapeId);
+
+        if (socialLink) {
+          window.open(socialLink.url, "_blank", "noopener,noreferrer");
+          return;
+        }
 
         const targetGroupId = getHomeTargetGroupId(targetShapeId);
 
