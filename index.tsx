@@ -7,6 +7,8 @@ import {
   type Editor,
   type TLEventInfo,
   type TLImageAsset,
+  type TLImageShape,
+  type TLShapePartial,
   type TLShapeId,
   Tldraw,
 } from "tldraw";
@@ -112,6 +114,57 @@ const socialIcon = {
   margin: 56,
 };
 
+const homeLinkDecorations = [
+  {
+    groupId: "resume",
+    label: "Resume marker",
+    file: "Triangle.svg",
+    w: 96,
+    h: 83,
+  },
+  {
+    groupId: "portfolio",
+    label: "Portfolio marker",
+    file: "Star.svg",
+    w: 116,
+    h: 110,
+  },
+  {
+    groupId: "inspiration",
+    label: "Inspiration marker",
+    file: "Square.svg",
+    w: 80,
+    h: 80,
+  },
+  {
+    groupId: "photos",
+    label: "Photos marker",
+    file: "Circle.svg",
+    w: 94,
+    h: 94,
+  },
+] as const satisfies readonly {
+  groupId: PageGroupId;
+  label: string;
+  file: string;
+  w: number;
+  h: number;
+}[];
+
+const homeLinkDecoration = {
+  margin: 48,
+};
+
+const homeLinkAnimation = {
+  triangleCycleMs: 2400,
+  triangleBounceDistance: 30,
+  squareCycleMs: 4200,
+  squareDistance: 46,
+  starCycleMs: 5200,
+  circleCycleMs: 3800,
+  circleMinScale: 0.72,
+};
+
 function springEase(t: number) {
   if (t <= 0) return 0;
   if (t >= 1) return 1;
@@ -119,6 +172,73 @@ function springEase(t: number) {
   const easedT = t * t * (2.1 - 1.1 * t);
 
   return 1 - Math.exp(-10 * easedT) * Math.cos(4.5 * easedT);
+}
+
+function loopProgress(now: number, duration: number, offset = 0) {
+  return ((now + offset) % duration) / duration;
+}
+
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function markerSpringEase(t: number) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+
+  return 1 - Math.exp(-7 * t) * Math.cos(8 * t);
+}
+
+function springPingPong(progress: number) {
+  return progress < 0.5
+    ? markerSpringEase(progress * 2)
+    : 1 - markerSpringEase((progress - 0.5) * 2);
+}
+
+function glidingPingPong(progress: number) {
+  if (progress < 0.44) {
+    return markerSpringEase(progress / 0.44);
+  }
+
+  if (progress < 0.62) return 1;
+
+  return 1 - markerSpringEase((progress - 0.62) / 0.38);
+}
+
+function getTopLeftForCenteredRotation(bounds: Bounds, rotation: number) {
+  const halfWidth = bounds.w / 2;
+  const halfHeight = bounds.h / 2;
+  const centerX = bounds.x + halfWidth;
+  const centerY = bounds.y + halfHeight;
+  const rotatedHalfX = Math.cos(rotation) * halfWidth - Math.sin(rotation) * halfHeight;
+  const rotatedHalfY = Math.sin(rotation) * halfWidth + Math.cos(rotation) * halfHeight;
+
+  return {
+    x: centerX - rotatedHalfX,
+    y: centerY - rotatedHalfY,
+  };
+}
+
+function gravityBounce(progress: number) {
+  if (progress < 0.28) {
+    return easeOutCubic(progress / 0.28);
+  }
+
+  if (progress < 0.58) {
+    const dropProgress = (progress - 0.28) / 0.3;
+
+    return 1 - dropProgress * dropProgress;
+  }
+
+  if (progress < 0.8) {
+    const bounceProgress = (progress - 0.58) / 0.22;
+
+    return Math.sin(Math.PI * bounceProgress) * 0.34;
+  }
+
+  const settleProgress = (progress - 0.8) / 0.2;
+
+  return Math.sin(Math.PI * settleProgress) * 0.11;
 }
 
 function getPageAssetId(groupId: string, imageId: string) {
@@ -145,10 +265,21 @@ function getSocialShapeId(id: (typeof socialLinks)[number]["id"]) {
   return createShapeId(`home-${id}`);
 }
 
+function getHomeLinkDecorationAssetId(groupId: PageGroupId) {
+  return AssetRecordType.createId(`home-decoration-${groupId}`);
+}
+
+function getHomeLinkDecorationShapeId(groupId: PageGroupId) {
+  return createShapeId(`home-decoration-${groupId}`);
+}
+
 function getHomeShapeIds() {
   return [
     ...homeImages.map((image) => getHomeShapeId(image.id)),
     ...socialLinks.map((link) => getSocialShapeId(link.id)),
+    ...homeLinkDecorations.map((decoration) =>
+      getHomeLinkDecorationShapeId(decoration.groupId),
+    ),
   ];
 }
 
@@ -179,6 +310,12 @@ function isSeededShapeId(shapeId: TLShapeId) {
 }
 
 function getHomeTargetGroupId(shapeId: TLShapeId) {
+  const decoration = homeLinkDecorations.find(
+    (linkDecoration) => getHomeLinkDecorationShapeId(linkDecoration.groupId) === shapeId,
+  );
+
+  if (decoration) return decoration.groupId;
+
   const homeImage = homeImages.find((image) => getHomeShapeId(image.id) === shapeId);
 
   if (!homeImage) return;
@@ -243,6 +380,26 @@ function getHomeLayout(viewport: { w: number; h: number }) {
   };
 }
 
+function getHomeLinkDecorationShape(
+  decoration: (typeof homeLinkDecorations)[number],
+  layout: ReturnType<typeof getHomeLayout>,
+  origin = { x: 0, y: 0 },
+) {
+  return {
+    id: getHomeLinkDecorationShapeId(decoration.groupId),
+    type: "image" as const,
+    isLocked: true,
+    x: origin.x + layout.positions[decoration.groupId].x + homeLinkDecoration.margin,
+    y: origin.y + layout.positions[decoration.groupId].y + homeLinkDecoration.margin,
+    props: {
+      assetId: getHomeLinkDecorationAssetId(decoration.groupId),
+      w: decoration.w,
+      h: decoration.h,
+      altText: decoration.label,
+    },
+  };
+}
+
 function getHomeShapes(viewport: { w: number; h: number }, origin = { x: 0, y: 0 }) {
   const layout = getHomeLayout(viewport);
   const introPosition = layout.positions.intro;
@@ -261,6 +418,9 @@ function getHomeShapes(viewport: { w: number; h: number }, origin = { x: 0, y: 0
         altText: image.label,
       },
     })),
+    ...homeLinkDecorations.map((decoration) =>
+      getHomeLinkDecorationShape(decoration, layout, origin),
+    ),
     ...socialLinks.map((link, index) => ({
       id: getSocialShapeId(link.id),
       type: "image" as const,
@@ -281,6 +441,110 @@ function getHomeShapes(viewport: { w: number; h: number }, origin = { x: 0, y: 0
       },
     })),
   ];
+}
+
+function getAnimatedHomeLinkDecorationShape(
+  decoration: (typeof homeLinkDecorations)[number],
+  baseShape: ReturnType<typeof getHomeLinkDecorationShape>,
+  now: number,
+): TLShapePartial<TLImageShape> {
+  const baseBounds = {
+    x: baseShape.x,
+    y: baseShape.y,
+    w: baseShape.props.w,
+    h: baseShape.props.h,
+  };
+
+  if (decoration.groupId === "resume") {
+    const progress = gravityBounce(loopProgress(now, homeLinkAnimation.triangleCycleMs));
+
+    return {
+      id: baseShape.id,
+      type: "image",
+      x: baseShape.x,
+      y: baseShape.y - progress * homeLinkAnimation.triangleBounceDistance,
+      rotation: 0,
+      props: {
+        w: baseShape.props.w,
+        h: baseShape.props.h,
+        flipX: false,
+      },
+    };
+  }
+
+  if (decoration.groupId === "portfolio") {
+    const progress = springPingPong(loopProgress(now, homeLinkAnimation.starCycleMs, 800));
+    const rotation = progress * Math.PI;
+    const position = getTopLeftForCenteredRotation(baseBounds, rotation);
+
+    return {
+      id: baseShape.id,
+      type: "image",
+      x: position.x,
+      y: position.y,
+      rotation,
+      props: {
+        w: baseShape.props.w,
+        h: baseShape.props.h,
+      },
+    };
+  }
+
+  if (decoration.groupId === "inspiration") {
+    const progress = glidingPingPong(loopProgress(now, homeLinkAnimation.squareCycleMs, 400));
+
+    return {
+      id: baseShape.id,
+      type: "image",
+      x: baseShape.x + progress * homeLinkAnimation.squareDistance,
+      y: baseShape.y,
+      rotation: 0,
+      props: {
+        w: baseShape.props.w,
+        h: baseShape.props.h,
+      },
+    };
+  }
+
+  const progress = springPingPong(loopProgress(now, homeLinkAnimation.circleCycleMs, 1200));
+  const scale = 1 - progress * (1 - homeLinkAnimation.circleMinScale);
+  const width = baseShape.props.w * scale;
+  const height = baseShape.props.h * scale;
+
+  return {
+    id: baseShape.id,
+    type: "image",
+    x: baseShape.x + (baseShape.props.w - width) / 2,
+    y: baseShape.y + (baseShape.props.h - height) / 2,
+    rotation: 0,
+    props: {
+      w: width,
+      h: height,
+    },
+  };
+}
+
+function animateHomeLinkDecorations(editor: Editor) {
+  const viewport = editor.getViewportScreenBounds();
+  const canvasLayout = getCanvasLayout(viewport);
+  const homeLayout = getHomeLayout(viewport);
+  const now = window.performance.now();
+  const updates = homeLinkDecorations.flatMap((decoration) => {
+    const baseShape = getHomeLinkDecorationShape(decoration, homeLayout, canvasLayout.homeOrigin);
+
+    if (!editor.getShape(baseShape.id)) return [];
+
+    return [getAnimatedHomeLinkDecorationShape(decoration, baseShape, now)];
+  });
+
+  if (updates.length === 0) return;
+
+  editor.run(
+    () => {
+      editor.updateShapes<TLImageShape>(updates);
+    },
+    { history: "ignore", ignoreShapeLock: true },
+  );
 }
 
 function getGridSize(isLandscape: boolean) {
@@ -454,9 +718,13 @@ function createImageAssets(editor: Editor, assets: TLImageAsset[]) {
   editor.createAssets(assets.filter((asset) => !editor.getAsset(asset.id)));
 }
 
-function bringSocialShapesToFront(editor: Editor) {
-  const shapeIds = socialLinks
-    .map((link) => getSocialShapeId(link.id))
+function bringHomeOverlayShapesToFront(editor: Editor) {
+  const shapeIds = [
+    ...homeLinkDecorations.map((decoration) =>
+      getHomeLinkDecorationShapeId(decoration.groupId),
+    ),
+    ...socialLinks.map((link) => getSocialShapeId(link.id)),
+  ]
     .filter((shapeId) => editor.getShape(shapeId));
 
   if (shapeIds.length === 0) return;
@@ -499,7 +767,7 @@ function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanva
     () => {
       editor.createShapes(shapes.filter((shape) => !editor.getShape(shape.id)));
       editor.updateShapes(shapes.filter((shape) => editor.getShape(shape.id)));
-      bringSocialShapesToFront(editor);
+      bringHomeOverlayShapesToFront(editor);
     },
     { ignoreShapeLock: true },
   );
@@ -546,6 +814,20 @@ function createHomeAssets(): TLImageAsset[] {
         isAnimated: false,
         mimeType: null,
         src: `${import.meta.env.BASE_URL}images/home/${image.file}`,
+      },
+    })),
+    ...homeLinkDecorations.map((decoration) => ({
+      id: getHomeLinkDecorationAssetId(decoration.groupId),
+      type: "image" as const,
+      typeName: "asset" as const,
+      meta: {},
+      props: {
+        w: decoration.w,
+        h: decoration.h,
+        name: decoration.file,
+        isAnimated: false,
+        mimeType: null,
+        src: `${import.meta.env.BASE_URL}images/${decoration.file}`,
       },
     })),
     ...socialLinks.map((link) => ({
@@ -919,7 +1201,10 @@ function App() {
         );
         updateCompassRotation();
       };
-      const handleFrame = () => updateCompassRotation();
+      const handleFrame = () => {
+        updateCompassRotation();
+        animateHomeLinkDecorations(editor);
+      };
       let pointerDown:
         | {
           point: Vec;
