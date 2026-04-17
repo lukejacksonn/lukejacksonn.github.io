@@ -74,8 +74,8 @@ type CanvasFocus =
 type VisiblePages = "all" | "none" | PageGroupId;
 
 const cameraAnimationMs = 1200;
-const homeStaggerMs = 40;
-const gridStaggerMs = 20;
+const homeStaggerMs = 60;
+const gridStaggerMs = 40;
 const transitionPauseMs = 80;
 
 const page = {
@@ -1015,7 +1015,7 @@ function App() {
     const homeShapeIds = shuffled(getHomeShapeIds());
     const pageShapeIds = shuffled(getPageShapeIds("all"));
     const zoomDelay = homeShapeIds.length * homeStaggerMs + transitionPauseMs;
-    const revealDelay = zoomDelay + cameraAnimationMs + transitionPauseMs;
+    const revealDelay = zoomDelay;
 
     homeShapeIds.forEach((shapeId, index) => {
       scheduleTransitionStep(() => {
@@ -1043,7 +1043,7 @@ function App() {
         currentEditor,
         getCanvasLayout(currentEditor.getViewportScreenBounds()),
         { type: "grid" },
-        true,
+        false,
       );
     }, zoomDelay);
 
@@ -1094,7 +1094,7 @@ function App() {
     setIsHomeFocused(true);
 
     const zoomDelay = pageShapeIds.length * gridStaggerMs + transitionPauseMs;
-    const revealDelay = zoomDelay + cameraAnimationMs + transitionPauseMs;
+    const revealDelay = zoomDelay;
     const homeShapeIds = shuffled(getHomeShapeIds());
 
     pageShapeIds.forEach((shapeId, index) => {
@@ -1123,7 +1123,7 @@ function App() {
         currentEditor,
         getCanvasLayout(currentEditor.getViewportScreenBounds()),
         { type: "home" },
-        true,
+        false,
       );
     }, zoomDelay);
 
