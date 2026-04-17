@@ -71,7 +71,7 @@ type CanvasFocus =
   | { type: "shape"; groupId: PageGroupId; shapeId: TLShapeId };
 type VisiblePages = "all" | "none" | PageGroupId;
 
-const cameraAnimationMs = 600;
+const cameraAnimationMs = 1200;
 const homeStaggerMs = 80;
 const gridStaggerMs = 35;
 const transitionPauseMs = 80;
@@ -88,6 +88,15 @@ const home = {
   tile: 287,
   gap: 21,
 };
+
+function springEase(t: number) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+
+  const easedT = t * t * (2.1 - 1.1 * t);
+
+  return 1 - Math.exp(-10 * easedT) * Math.cos(4.5 * easedT);
+}
 
 function getPageAssetId(groupId: string, imageId: string) {
   return AssetRecordType.createId(`page-${groupId}-${imageId}`);
@@ -427,7 +436,7 @@ function createOrUpdateShapes(editor: Editor, shapes: ReturnType<typeof getCanva
 
 function zoomToBounds(editor: Editor, bounds: Bounds, animate = false) {
   editor.zoomToBounds(bounds, {
-    animation: animate ? { duration: cameraAnimationMs } : undefined,
+    animation: animate ? { duration: cameraAnimationMs, easing: springEase } : undefined,
     inset: 96,
   });
 }
