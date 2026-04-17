@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState, type TouchEventHandler } from "react";
-import { createRoot } from "react-dom/client";
+import { useCallback, useRef, useState, type TouchEventHandler } from "preact/compat";
+import { createRoot } from "preact/compat/client";
 import {
   AssetRecordType,
   Vec,
