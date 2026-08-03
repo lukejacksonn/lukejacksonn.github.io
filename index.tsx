@@ -1300,7 +1300,7 @@ function App() {
       onTouchStartCapture={handleTouchCapture}
     >
       <Tldraw hideUi onMount={handleMount} licenseKey={
-        "tldraw-2026-07-26/WyJFb2NyeWQxVSIsWyIqIl0sMTYsIjIwMjYtMDctMjYiXQ.SRvt6PmZKkxVOnee3fVyAI6erE0QaQC0qKIP/m7NAbyNCy0XY+nIqkKTv0ewtb6nprtHaw21JgD+YYW2TkNHYQ"
+        "tldraw-luke-jackson-2031-08-03/WyJJWnYySkxINSIsWyIqLmx1a2VqYWNrc29ubi5jb20iXSw5LCIyMDMxLTA4LTAzIl0.wOfkL3EfWTE3YIs9H7/aFwVluxiidaSdD8Ym2NnF/Ch2LYoEs6FF/3gwRSCoiU7wZNcArAt67Y2bLWW84KpANg"
       } />
       {!isHomeFocused && (
         <button
